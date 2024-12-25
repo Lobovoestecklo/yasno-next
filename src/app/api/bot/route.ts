@@ -9,10 +9,6 @@ export async function POST(request: Request) {
     try {
         const { messages } = await request.json();
 
-        console.log(messages);
-
-        console.log(ANTHROPIC_API_KEY);
-
         if (!messages || !Array.isArray(messages)) {
             return NextResponse.json(
                 { error: 'Invalid or missing messages in request body' },
