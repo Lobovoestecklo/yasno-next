@@ -28,15 +28,15 @@ export default function Home() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <Card className="max-w-2xl mx-auto min-h-screen shadow-none border-0 rounded-none md:min-h-0 md:my-8 md:rounded-lg md:border">
-        <CardHeader className="border-b bg-primary px-6 py-4">
-          <h1 className="text-xl font-semibold text-primary-foreground text-center">
+    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 md:py-[60px]">
+      <Card className="max-w-2xl mx-auto min-h-screen shadow-none border-0 rounded-none md:min-h-0 md:rounded-lg md:border">
+        <CardHeader className="border-b bg-primary px-6 py-4 h-[60px] md:rounded-t-lg">
+          <h1 className="text-xl font-semibold text-primary-foreground text-center tracking-tighter">
             Сценарный Коуч
           </h1>
         </CardHeader>
 
-        <CardContent className="p-4 md:p-6 space-y-4 h-[60vh] overflow-y-auto">
+        <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-160px)] md:h-[calc(100vh-280px)] overflow-y-auto">
           {messages.map((msg, index) => (
             <div
               key={msg.id}
@@ -54,8 +54,8 @@ export default function Home() {
           ))}
         </CardContent>
 
-        <CardFooter className="border-t p-4 md:p-6">
-          <form onSubmit={sendMessage} className="flex w-full gap-2">
+        <CardFooter className="border-t p-4 h-[100px] md:p-6">
+          <form onSubmit={sendMessage} className="flex w-full gap-2 items-center">
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -71,44 +71,6 @@ export default function Home() {
           </form>
         </CardFooter>
       </Card>
-    </div>
-  )
-
-  return (
-    <div className={styles.container}>
-      <div className={styles.chatHeader}>
-        <h1>Сценарный Коуч</h1>
-      </div>
-      <div className={styles.chatBody}>
-        {messages.map((msg) => (
-          <div
-            key={msg.id}
-            className={`${styles.message} ${msg.role === "user" ? styles.userMessage : styles.botMessage}`}
-          >
-            <div className={styles.sender}>
-              {msg.role === "user" ? "Вы" : "Бот"}
-            </div>
-            <div>{msg.content}</div>
-          </div>
-        ))}
-      </div>
-      <div className={styles.chatFooter}>
-        <input
-          className={styles.input}
-          type="text"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          placeholder="Введите сообщение..."
-          disabled={isStreaming}
-        />
-        <button
-          className={styles.button}
-          onClick={sendMessage}
-          disabled={isStreaming}
-        >
-          Отправить
-        </button>
-      </div>
     </div>
   )
 }
