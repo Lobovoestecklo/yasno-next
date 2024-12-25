@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, KeyboardEvent } from 'react'
-import styles from './page.module.css'
 import { useAnthropicMessages } from '@/lib/hooks/useAnthropicMessages'
 import { Send } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -37,7 +36,7 @@ export default function Home() {
         </CardHeader>
 
         <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-160px)] md:h-[calc(100vh-280px)] overflow-y-auto">
-          {messages.map((msg, index) => (
+          {messages.map((msg) => (
             <div
               key={msg.id}
               className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
@@ -64,7 +63,7 @@ export default function Home() {
               className="flex-1 min-h-[60px] max-h-[200px] resize-none"
               rows={2}
             />
-            <Button type="submit" size="icon" className="h-[60px] w-[60px]">
+            <Button type="submit" size="icon" className="h-[60px] w-[60px]" disabled={isStreaming}>
               <Send className="h-5 w-5" />
               <span className="sr-only">Отправить</span>
             </Button>
