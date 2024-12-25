@@ -46,13 +46,13 @@ export const useAnthropicMessages = (
 
       if (!response.ok) {
         console.log(`HTTP error! status: ${response.status}`);
-        alert('Etwas ist schiefgelaufen, bitte versuch es erneut!')
+        alert('Что-то пошло не так, попробуйте еще раз!')
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
         console.log('Response body is not readable');
-        alert('Etwas ist schiefgelaufen, bitte versuch es erneut!')
+        alert('Что-то пошло не так, попробуйте еще раз!')
         return;
       }
 
@@ -95,7 +95,7 @@ export const useAnthropicMessages = (
       }
     } catch (error) {
       console.error('Error submitting message:', error);
-      alert('Etwas ist schiefgelaufen, bitte versuch es erneut!');
+      alert('Что-то пошло не так, попробуйте еще раз!');
     } finally {
       setIsStreaming(false);
       setStreamedMessageId(null);
