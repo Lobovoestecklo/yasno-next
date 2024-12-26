@@ -7,7 +7,12 @@ import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import ScenarioDialog from "@/components/scenario-dialog"
+import { FormattedResponse } from '@/components/FormattedResponse'
 
+const PREDEFINED_MESSAGES = {
+  IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
+  CREATE_NEW: "У меня нет сценария, я создаю все с нуля"
+} as const;
 
 export default function Home() {
   const [input, setInput] = useState("");
@@ -19,6 +24,10 @@ export default function Home() {
     if (input.trim()) {
       submitUserMessage(input);
     }
+  };
+
+  const handlePredefinedMessage = (message: string) => {
+    submitUserMessage(message);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -54,28 +63,57 @@ export default function Home() {
                   : 'bg-primary text-primary-foreground'
                   }`}
               >
-                <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">{msg.content}</p>
+                {msg.role === 'assistant' ? (
+                  <FormattedResponse content={msg.content} />
+                ) : (
+                  <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                    {msg.content}
+                  </p>
+                )}
               </div>
             </div>
           ))}
         </CardContent>
 
-        <CardFooter className="border-t p-4 h-[100px] md:p-6">
-          <form onSubmit={sendMessage} className="flex w-full gap-2 items-center relative">
-            <ScenarioDialog onSubmit={handleScenarioSubmit} />
-            <Textarea
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Введите сообщение... (Shift + Enter для новой строки)"
-              className="flex-1 min-h-[60px] max-h-[200px] resize-none pr-10"
-              rows={2}
-            />
-            <Button type="submit" size="icon" className="h-[60px] w-[60px]" disabled={isStreaming}>
-              <Send className="h-5 w-5" />
-              <span className="sr-only">Отправить</span>
-            </Button>
-          </form>
+        <CardFooter className="border-t p-4 md:p-6">
+          <div className="flex flex-col w-full gap-4">
+            <div className="flex gap-4 justify-center w-full">
+              <Button
+                variant="outline"
+                className="flex-1 max-w-[300px] whitespace-normal h-auto py-2"
+                onClick={() => handlePredefinedMessage(PREDEFINED_MESSAGES.IMPROVE_EXISTING)}
+                disabled={isStreaming}
+              >
+                {PREDEFINED_MESSAGES.IMPROVE_EXISTING}
+              </Button>
+              <Button
+                variant="outline"
+                className="flex-1 max-w-[300px] whitespace-normal h-auto py-2"
+                onClick={() => handlePredefinedMessage(PREDEFINED_MESSAGES.CREATE_NEW)}
+                disabled={isStreaming}
+              >
+                {PREDEFINED_MESSAGES.CREATE_NEW}
+              </Button>
+            </div>
+
+            <div className="flex w-full gap-2 items-center">
+              <form onSubmit={sendMessage} className="flex w-full gap-2 items-center relative">
+                <ScenarioDialog onSubmit={handleScenarioSubmit} />
+                <Textarea
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Введите сообщение... (Shift + Enter для новой строки)"
+                  className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+                  rows={2}
+                />
+                <Button type="submit" size="icon" className="h-[60px] w-[60px]" disabled={isStreaming}>
+                  <Send className="h-5 w-5" />
+                  <span className="sr-only">Отправить</span>
+                </Button>
+              </form>
+            </div>
+          </div>
         </CardFooter>
       </Card>
     </div>

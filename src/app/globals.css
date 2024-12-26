@@ -86,3 +86,23 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.formatted-response {
+    @apply text-sm leading-relaxed space-y-2;
+}
+
+.formatted-response p {
+    @apply transition-colors duration-200;
+}
+
+.formatted-response h3 {
+    @apply transition-colors duration-200 px-2 py-1 -mx-2 rounded-sm;
+}
+
+.formatted-response h3:hover {
+    @apply bg-primary/10;
+}
+
+.formatted-response p:hover {
+    @apply bg-muted/30 rounded-sm px-2 -mx-2;
+}
