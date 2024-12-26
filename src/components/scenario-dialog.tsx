@@ -1,8 +1,15 @@
 import React from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from "@/components/ui/button";
-import { Paperclip } from 'lucide-react';
+import { Paperclip, FileText } from 'lucide-react';
 import { Textarea } from './ui/textarea';
+import { pdfjs } from 'react-pdf';
+
+// Set the workerSrc to the correct path
+pdfjs.GlobalWorkerOptions.workerSrc = new URL(
+    'pdfjs-dist/build/pdf.worker.min.mjs',
+    import.meta.url,
+  ).toString();
 
 interface ScenarioDialogProps {
     onSubmit: (content: string) => void;
@@ -10,6 +17,24 @@ interface ScenarioDialogProps {
 
 const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
     const [content, setContent] = React.useState('');
+
+    const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+        const file = event.target.files?.[0];
+        if (file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const pdf = await pdfjs.getDocument({ data: arrayBuffer }).promise;
+            let extractedText = '';
+
+            for (let i = 1; i <= pdf.numPages; i++) {
+                const page = await pdf.getPage(i);
+                const textContent = await page.getTextContent();
+                const pageText = textContent.items.map((item: any) => item.str).join(' ');
+                extractedText += pageText + '\n';
+            }
+
+            setContent(extractedText);
+        }
+    };
 
     return (
         <Dialog>
@@ -31,6 +56,19 @@ const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
                     />
                 </DialogDescription>
                 <div className="flex justify-end mt-4">
+                    <input
+                        type="file"
+                        accept="application/pdf"
+                        onChange={handlePdfUpload}
+                        className="hidden"
+                        id="pdf-upload"
+                    />
+                    <label htmlFor="pdf-upload" className="mr-2">
+                        {/* <Button size="icon" variant="secondary"> */}
+                            <FileText size={20} color="black" />
+                            <span className="sr-only">Загрузить PDF</span>
+                        {/* </Button> */}
+                    </label>
                     <DialogClose asChild>
                         <Button
                             className="mr-2"
