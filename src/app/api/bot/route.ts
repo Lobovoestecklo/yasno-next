@@ -32,7 +32,7 @@ export async function POST(request: Request) {
                         body: JSON.stringify({
                             messages: cleanedMessages,
                             model: 'claude-3-5-sonnet-20240620',
-                            max_tokens: 1024,
+                            max_tokens: 4096,
                             system: SYSTEM_MESSAGE,
                             stream: true,
                         }),
