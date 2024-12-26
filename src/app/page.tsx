@@ -51,7 +51,7 @@ export default function Home() {
           </h1>
         </CardHeader>
 
-        <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-160px)] md:h-[calc(100vh-280px)] overflow-y-auto">
+        <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-256px)] md:h-[calc(100vh-364px)] overflow-y-auto">
           {messages.map((msg) => (
             <div
               key={msg.id}
