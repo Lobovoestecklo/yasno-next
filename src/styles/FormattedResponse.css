@@ -1,0 +1,71 @@
+.formatted-response {
+    font-family: 'Arial', sans-serif;
+    line-height: 1.6;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.analysis-section,
+.suggestions-section,
+.explanation-section,
+.support-section {
+    margin: 1.5rem 0;
+    padding: 1rem;
+    border-radius: 8px;
+    position: relative;
+}
+
+.analysis-section {
+    background-color: #f0f7ff;
+    border-left: 4px solid #2196f3;
+}
+
+.suggestions-section {
+    background-color: #f1f8e9;
+    border-left: 4px solid #8bc34a;
+}
+
+.explanation-section {
+    background-color: #fff3e0;
+    border-left: 4px solid #ff9800;
+}
+
+.support-section {
+    background-color: #fce4ec;
+    border-left: 4px solid #e91e63;
+}
+
+/* Add section titles */
+.analysis-section::before,
+.suggestions-section::before,
+.explanation-section::before,
+.support-section::before {
+    position: absolute;
+    top: -12px;
+    left: 1rem;
+    padding: 0 0.5rem;
+    font-size: 0.875rem;
+    font-weight: bold;
+    background-color: white;
+    border-radius: 4px;
+}
+
+.analysis-section::before {
+    content: 'Разбор сценария';
+    color: #2196f3;
+}
+
+.suggestions-section::before {
+    content: 'Предложения';
+    color: #8bc34a;
+}
+
+.explanation-section::before {
+    content: 'Объяснение';
+    color: #ff9800;
+}
+
+.support-section::before {
+    content: 'Поддержка';
+    color: #e91e63;
+} 
