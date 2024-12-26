@@ -3,13 +3,13 @@ import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, D
 import { Button } from "@/components/ui/button";
 import { Paperclip, FileText } from 'lucide-react';
 import { Textarea } from './ui/textarea';
-import { pdfjs } from 'react-pdf';
+import * as pdfjs from 'pdfjs-dist';
 
 // Set the workerSrc to the correct path
 pdfjs.GlobalWorkerOptions.workerSrc = new URL(
     'pdfjs-dist/build/pdf.worker.min.mjs',
     import.meta.url,
-  ).toString();
+).toString();
 
 interface ScenarioDialogProps {
     onSubmit: (content: string) => void;
@@ -64,10 +64,13 @@ const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
                         id="pdf-upload"
                     />
                     <label htmlFor="pdf-upload" className="mr-2">
-                        {/* <Button size="icon" variant="secondary"> */}
+                        <Button size="icon" variant="secondary" onClick={(e) => {
+                            e.preventDefault();
+                            document.getElementById('pdf-upload')?.click();
+                        }}>
                             <FileText size={20} color="black" />
                             <span className="sr-only">Загрузить PDF</span>
-                        {/* </Button> */}
+                        </Button>
                     </label>
                     <DialogClose asChild>
                         <Button
