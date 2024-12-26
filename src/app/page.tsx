@@ -12,7 +12,7 @@ import ScenarioDialog from "@/components/scenario-dialog"
 export default function Home() {
   const [input, setInput] = useState("");
   const { messages, submitUserMessage, isStreaming } = useAnthropicMessages(setInput);
-  const [scenario, setScenario] = useState("");
+  // const [scenario, setScenario] = useState("");
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +30,7 @@ export default function Home() {
 
   const handleScenarioSubmit = (content: string) => {
     console.log('Scenario submitted:', content);
-    setScenario(content);
+    // setScenario(content);
   };
 
   return (
