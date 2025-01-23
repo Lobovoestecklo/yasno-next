@@ -16,7 +16,7 @@ const PREDEFINED_MESSAGES = {
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const { messages, submitUserMessage, isStreaming } = useAnthropicMessages(setInput);
+  const { messages, submitUserMessage, submitScenario, isStreaming } = useAnthropicMessages(setInput);
   // const [scenario, setScenario] = useState("");
 
   const sendMessage = (e: React.FormEvent) => {
@@ -38,9 +38,11 @@ export default function Home() {
   }
 
   const handleScenarioSubmit = (content: string) => {
-    console.log('Scenario submitted:', content);
+    submitScenario(content);
+    // console.log('Scenario submitted:', content);
     // setScenario(content);
   };
+
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 md:py-[60px]">
@@ -52,27 +54,32 @@ export default function Home() {
         </CardHeader>
 
         <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-256px)] md:h-[calc(100vh-364px)] overflow-y-auto">
-          {messages.map((msg) => (
-            <div
-              key={msg.id}
-              className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
-            >
+          {messages.map((msg) => {
+            if (msg.is_scenario) {
+              return null
+            }
+            return (
               <div
-                className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'assistant'
-                  ? 'bg-muted text-muted-foreground'
-                  : 'bg-primary text-primary-foreground'
-                  }`}
+                key={msg.id}
+                className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
               >
-                {msg.role === 'assistant' ? (
-                  <FormattedResponse content={msg.content} />
-                ) : (
-                  <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                    {msg.content}
-                  </p>
-                )}
+                <div
+                  className={`max-w-[80%] rounded-2xl px-4 py-2 ${msg.role === 'assistant'
+                    ? 'bg-muted text-muted-foreground'
+                    : 'bg-primary text-primary-foreground'
+                    }`}
+                >
+                  {msg.role === 'assistant' ? (
+                    <FormattedResponse content={msg.content} />
+                  ) : (
+                    <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                      {msg.content}
+                    </p>
+                  )}
+                </div>
               </div>
-            </div>
-          ))}
+            )
+          })}
         </CardContent>
 
         <CardFooter className="border-t p-4 md:p-6">

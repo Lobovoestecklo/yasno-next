@@ -41,6 +41,10 @@ const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
             <DialogTrigger asChild className="absolute top-[6px] right-[75px]">
                 <Button type="submit" size="icon" className="h-[30px] w-[30px]" variant="secondary">
                     <Paperclip size={20} color="black" />
+                    {content.trim().length > 0 ? (
+                        <div className="absolute top-1 left-1 bg-purple-500 text-white rounded-full w-1 h-1 flex items-center justify-center">
+                        </div>
+                    ) : null}
                     <span className="sr-only">Отправить</span>
                 </Button>
             </DialogTrigger>

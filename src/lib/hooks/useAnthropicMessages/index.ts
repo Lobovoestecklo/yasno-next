@@ -19,6 +19,16 @@ export const useAnthropicMessages = (
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedMessageId, setStreamedMessageId] = useState<string | null>(null);
 
+  const submitScenario = useCallback(async (scenario: string) => {
+    const scenarioMessage: IMessage = {
+      id: uuidv4(),
+      is_scenario: true,
+      role: 'user',
+      content: `Вот мой сценарий: \n${scenario}`,
+    }
+    setMessages((prev) => [...prev, scenarioMessage]);
+  }, [messages])
+
   const submitUserMessage = useCallback(async (message: string) => {
     const userMessage: IMessage = {
       id: uuidv4(),
@@ -104,6 +114,7 @@ export const useAnthropicMessages = (
 
   return {
     submitUserMessage,
+    submitScenario,
     messages,
     isStreaming,
     streamedMessageId,
