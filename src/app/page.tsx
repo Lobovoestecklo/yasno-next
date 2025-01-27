@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import ScenarioDialog from "@/components/scenario-dialog"
 import { FormattedResponse } from '@/components/FormattedResponse'
-import { getSavedMessages, saveMessages, clearMessagesAndReload } from '@/lib/utils/local-storage-chat-messages'
+import { getSavedMessages, saveMessages, clearMessagesAndReload, extractLatestScenario } from '@/lib/utils/local-storage-chat-messages'
 import ClearChatHistoryDialog from '@/components/clear-chat-history-dialog'
 
 const PREDEFINED_MESSAGES = {
@@ -19,6 +19,7 @@ const PREDEFINED_MESSAGES = {
 export default function Home() {
   const [input, setInput] = useState("");
   const localStorageMessages = getSavedMessages();
+  const scenario = extractLatestScenario(localStorageMessages);
   const {
     messages,
     submitUserMessage,
@@ -114,7 +115,7 @@ export default function Home() {
 
             <div className="flex w-full gap-2 items-center">
               <form onSubmit={sendMessage} className="flex w-full gap-2 items-center relative">
-                <ScenarioDialog onSubmit={handleScenarioSubmit} />
+                <ScenarioDialog onSubmit={handleScenarioSubmit} scenario={scenario} />
                 <Textarea
                   value={input}
                   onChange={(e) => setInput(e.target.value)}

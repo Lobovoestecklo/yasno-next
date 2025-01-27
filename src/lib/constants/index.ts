@@ -20,3 +20,5 @@ export const INITIAL_BOT_MESSAGE: IMessage = {
     role: 'assistant',
     content: "Привет! Я твой сценарный коуч, который поможет тебе улучшить твой сценарий. Расскажи мне о твоем сценарии, и я помогу тебе с ним.",
 };
+
+export const SCENARIO_MESSAGE_PREFIX = `Вот мой сценарий:`;

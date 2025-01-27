@@ -13,10 +13,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 interface ScenarioDialogProps {
     onSubmit: (content: string) => void;
+    scenario: string | null;
 }
 
-const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
-    const [content, setContent] = React.useState('');
+const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit, scenario }) => {
+    const [content, setContent] = React.useState(scenario || '');
 
     const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];

@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 
-import { ANTHROPIC_HEADERS, ANTHROPIC_POST_BODY_PARAMS, ANTHROPIC_SYSTEM_MESSAGE } from '@/lib/constants';
+import { ANTHROPIC_HEADERS, ANTHROPIC_POST_BODY_PARAMS, ANTHROPIC_SYSTEM_MESSAGE, SCENARIO_MESSAGE_PREFIX } from '@/lib/constants';
 import { prepareMessagesForPost } from '@/lib/utils/anthropic';
 import { IMessage } from '@/types';
 
@@ -21,7 +21,7 @@ export const useAnthropicMessages = (
       id: uuidv4(),
       is_scenario: true,
       role: 'user',
-      content: `Вот мой сценарий: \n${scenario}`,
+      content: `${SCENARIO_MESSAGE_PREFIX}\n${scenario}`,
     }
     setMessages((prev) => {
       const newMessages = [...prev, scenarioMessage];
