@@ -2,13 +2,14 @@
 
 import React, { useState, KeyboardEvent } from 'react'
 import { useAnthropicMessages } from '@/lib/hooks/useAnthropicMessages'
-import { Send } from 'lucide-react'
+import { Send, ListRestart } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import ScenarioDialog from "@/components/scenario-dialog"
 import { FormattedResponse } from '@/components/FormattedResponse'
-import { getSavedMessages, saveMessages } from '@/lib/utils/local-storage-chat-messages'
+import { getSavedMessages, saveMessages, clearMessagesAndReload } from '@/lib/utils/local-storage-chat-messages'
+import ClearChatHistoryDialog from '@/components/clear-chat-history-dialog'
 
 const PREDEFINED_MESSAGES = {
   IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
@@ -54,10 +55,11 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 md:py-[60px]">
       <Card className="max-w-2xl mx-auto min-h-screen shadow-none border-0 rounded-none md:min-h-0 md:rounded-lg md:border">
-        <CardHeader className="border-b bg-primary px-6 py-4 h-[60px] md:rounded-t-lg">
+        <CardHeader className="border-b bg-primary px-6 py-4 h-[60px] md:rounded-t-lg relative">
           <h1 className="text-xl font-semibold text-primary-foreground text-center tracking-tighter">
             Сценарный Коуч
           </h1>
+          <ClearChatHistoryDialog onAccept={clearMessagesAndReload} />
         </CardHeader>
 
         <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-256px)] md:h-[calc(100vh-364px)] overflow-y-auto">

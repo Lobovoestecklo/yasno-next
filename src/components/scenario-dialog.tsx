@@ -45,7 +45,6 @@ const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
                         <div className="absolute top-1 left-1 bg-purple-500 text-white rounded-full w-1 h-1 flex items-center justify-center">
                         </div>
                     ) : null}
-                    <span className="sr-only">Отправить</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>
