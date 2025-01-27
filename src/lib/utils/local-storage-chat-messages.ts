@@ -17,11 +17,10 @@ export const saveMessages = (messages: IMessage[]) => {
 }
 
 export const clearMessagesAndReload = () => {
-    if (!window || !window.localStorage) {
-        throw new Error('Local storage is not available, switch to client');
+    if (window && window.localStorage) {
+        localStorage.removeItem(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
+        window.location.reload();
     }
-    localStorage.removeItem(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
-    window.location.reload();
 }
 
 export const extractLatestScenario = (messages: IMessage[]): string | null => {

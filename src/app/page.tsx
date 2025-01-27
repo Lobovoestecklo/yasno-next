@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, KeyboardEvent } from 'react'
+import React, { useState, KeyboardEvent, useEffect } from 'react'
 import { useAnthropicMessages } from '@/lib/hooks/useAnthropicMessages'
 import { Send } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -10,6 +10,7 @@ import ScenarioDialog from "@/components/scenario-dialog"
 import { FormattedResponse } from '@/components/FormattedResponse'
 import { getSavedMessages, saveMessages, clearMessagesAndReload, extractLatestScenario } from '@/lib/utils/local-storage-chat-messages'
 import ClearChatHistoryDialog from '@/components/clear-chat-history-dialog'
+import { IMessage } from '@/types'
 
 const PREDEFINED_MESSAGES = {
   IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
@@ -18,15 +19,15 @@ const PREDEFINED_MESSAGES = {
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const localStorageMessages = getSavedMessages();
-  const scenario = extractLatestScenario(localStorageMessages);
+  const [localStorageMessages, setLocalStorageMessages] = useState<IMessage[]>([]);
+  const [scenario, setScenario] = useState<string | null>(null);
+
   const {
     messages,
     submitUserMessage,
     submitScenario,
     isStreaming
   } = useAnthropicMessages(setInput, localStorageMessages, saveMessages, getSavedMessages);
-  // const [scenario, setScenario] = useState("");
 
   const sendMessage = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,6 +53,12 @@ export default function Home() {
     // setScenario(content);
   };
 
+  useEffect(() => {
+    const localStorageMessages = getSavedMessages();
+    setLocalStorageMessages(localStorageMessages);
+    const scenario = extractLatestScenario(localStorageMessages);
+    setScenario(scenario);
+  }, []);
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 md:py-[60px]">

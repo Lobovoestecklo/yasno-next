@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from "@/components/ui/button";
 import { Paperclip, FileText } from 'lucide-react';
@@ -36,6 +36,10 @@ const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit, scenario }) =
             setContent(extractedText);
         }
     };
+
+    useEffect(() => {
+        setContent(scenario || '');
+    }, [scenario]);
 
     return (
         <Dialog>
