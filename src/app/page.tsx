@@ -2,7 +2,7 @@
 
 import React, { useState, KeyboardEvent } from 'react'
 import { useAnthropicMessages } from '@/lib/hooks/useAnthropicMessages'
-import { Send, ListRestart } from 'lucide-react'
+import { Send } from 'lucide-react'
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
