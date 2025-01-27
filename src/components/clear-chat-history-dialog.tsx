@@ -10,7 +10,7 @@ interface ClearChatHistoryDialogProps {
 const ClearChatHistoryDialog: React.FC<ClearChatHistoryDialogProps> = ({ onAccept }) => {
     return (
         <Dialog>
-            <DialogTrigger asChild className="absolute top-[6px] right-[75px]">
+            <DialogTrigger asChild>
                 <div role='button' onClick={() => { }} className="absolute right-[10px] top-[4px] w-10 h-10 bg-primary rounded-full flex items-center justify-center">
                     <ListRestart size={24} color='white' />
                 </div>
