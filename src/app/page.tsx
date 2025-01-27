@@ -8,6 +8,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import ScenarioDialog from "@/components/scenario-dialog"
 import { FormattedResponse } from '@/components/FormattedResponse'
+import { getSavedMessages, saveMessages } from '@/lib/utils/local-storage-chat-messages'
 
 const PREDEFINED_MESSAGES = {
   IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
@@ -16,7 +17,13 @@ const PREDEFINED_MESSAGES = {
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const { messages, submitUserMessage, submitScenario, isStreaming } = useAnthropicMessages(setInput);
+  const localStorageMessages = getSavedMessages();
+  const {
+    messages,
+    submitUserMessage,
+    submitScenario,
+    isStreaming
+  } = useAnthropicMessages(setInput, localStorageMessages, saveMessages, getSavedMessages);
   // const [scenario, setScenario] = useState("");
 
   const sendMessage = (e: React.FormEvent) => {

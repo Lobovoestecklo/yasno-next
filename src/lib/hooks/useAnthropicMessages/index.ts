@@ -6,16 +6,13 @@ import { ANTHROPIC_HEADERS, ANTHROPIC_POST_BODY_PARAMS, ANTHROPIC_SYSTEM_MESSAGE
 import { prepareMessagesForPost } from '@/lib/utils/anthropic';
 import { IMessage } from '@/types';
 
-const initialBotMessage: IMessage = {
-  id: 'assistant-initial',
-  role: 'assistant',
-  content: "Привет! Я твой сценарный коуч, который поможет тебе улучшить твой сценарий. Расскажи мне о твоем сценарии, и я помогу тебе с ним.",
-};
-
 export const useAnthropicMessages = (
   setInputValue: (value: string) => void,
+  localStorageMessages: IMessage[],
+  saveMessages: (messages: IMessage[]) => void,
+  getSavedMessages: () => IMessage[]
 ) => {
-  const [messages, setMessages] = useState<IMessage[]>([initialBotMessage]);
+  const [messages, setMessages] = useState<IMessage[]>(localStorageMessages);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedMessageId, setStreamedMessageId] = useState<string | null>(null);
 
@@ -26,7 +23,11 @@ export const useAnthropicMessages = (
       role: 'user',
       content: `Вот мой сценарий: \n${scenario}`,
     }
-    setMessages((prev) => [...prev, scenarioMessage]);
+    setMessages((prev) => {
+      const newMessages = [...prev, scenarioMessage];
+      saveMessages(newMessages);
+      return newMessages;
+    });
   }, [messages])
 
   const submitUserMessage = useCallback(async (message: string) => {
@@ -35,7 +36,11 @@ export const useAnthropicMessages = (
       role: 'user',
       content: message,
     };
-    setMessages((prev) => [...prev, userMessage]);
+    setMessages((prev) => {
+      const newMessages = [...prev, userMessage];
+      saveMessages(newMessages);
+      return newMessages;
+    });
     setInputValue('');
     setIsStreaming(true);
 
@@ -79,7 +84,13 @@ export const useAnthropicMessages = (
         for (const line of lines) {
           if (line.startsWith('data: ')) {
             const data = JSON.parse(line.slice(6));
-
+            if (data.type === 'message_stop' && assistantMessageId) {
+              saveMessages([...getSavedMessages(), {
+                id: assistantMessageId,
+                role: 'assistant',
+                content: assistantMessageContent,
+              }]);
+            }
             if (data.type === 'message_start') {
               assistantMessageId = data.message.id;
               setStreamedMessageId(assistantMessageId);
