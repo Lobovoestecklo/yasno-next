@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Dialog, DialogTrigger, DialogContent, DialogTitle, DialogDescription, DialogClose } from '@/components/ui/dialog';
 import { Button } from "@/components/ui/button";
 import { Paperclip, FileText } from 'lucide-react';
@@ -13,10 +13,11 @@ pdfjs.GlobalWorkerOptions.workerSrc = new URL(
 
 interface ScenarioDialogProps {
     onSubmit: (content: string) => void;
+    scenario: string | null;
 }
 
-const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
-    const [content, setContent] = React.useState('');
+const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit, scenario }) => {
+    const [content, setContent] = React.useState(scenario || '');
 
     const handlePdfUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -36,6 +37,10 @@ const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
         }
     };
 
+    useEffect(() => {
+        setContent(scenario || '');
+    }, [scenario]);
+
     return (
         <Dialog>
             <DialogTrigger asChild className="absolute top-[6px] right-[75px]">
@@ -45,7 +50,6 @@ const ScenarioDialog: React.FC<ScenarioDialogProps> = ({ onSubmit }) => {
                         <div className="absolute top-1 left-1 bg-purple-500 text-white rounded-full w-1 h-1 flex items-center justify-center">
                         </div>
                     ) : null}
-                    <span className="sr-only">Отправить</span>
                 </Button>
             </DialogTrigger>
             <DialogContent>
