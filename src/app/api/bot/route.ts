@@ -71,36 +71,6 @@ const INITIAL_INSTRUCTION = `При анализе сценария и пред�
 
 Ваша задача — использовать информацию из перечисленных документов по максимуму, помогая анализировать и дорабатывать сценарии на высоком профессиональном уровне.`;
 
-
-/**
- * Merge an array of text chunks so that the total ephemeral blocks do NOT exceed 4.
- * If the array is length <= 4, do nothing. Otherwise, combine them into 4 total chunks.
- *
- * You can adapt this approach if you need more nuanced merging logic.
- */
-function mergeChunksToMaxFour(chunks: string[]): string[] {
-  if (chunks.length <= 4) {
-    return chunks;
-  }
-  // We have more than 4 chunks. Let's merge them so we only end up with 4.
-  // A simple approach is to distribute them roughly evenly across 4 buckets.
-  const merged: string[] = [ '', '', '', '' ];
-  // E.g., each iteration adds a chunk to whichever ephemeral block is "current"
-  let currentIndex = 0;
-
-  for (let i = 0; i < chunks.length; i++) {
-    merged[currentIndex] += chunks[i];
-    // Move to next block, but do not exceed index 3
-    if (currentIndex < 3) {
-      currentIndex++;
-    } else {
-      currentIndex = 0; 
-    }
-  }
-
-  return merged.filter(block => block.trim().length > 0);
-}
-
 export async function POST(request: Request) {
   try {
     const { messages } = await request.json();
