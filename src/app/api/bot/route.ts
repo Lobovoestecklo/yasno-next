@@ -6,9 +6,9 @@ const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
 // Load all text files for the system prompt
-const scriptAdvices = loadScriptFromFile('public/scenario_examples/script_advices.txt');
-const trueDetectivePitch = loadScriptFromFile('public/scenario_examples/true_detective_pitch_example.txt');
-const typicalProblems = loadScriptFromFile('public/scenario_examples/typical_problems_in_scripts.txt');
+const scriptAdvices = loadScriptFromFile('src/lib/scenario-examples/script-advices.txt');
+const trueDetectivePitch = loadScriptFromFile('src/lib/scenario-examples/true-detective-pitch-example.txt');
+const typicalProblems = loadScriptFromFile('src/lib/scenario-examples/typical-problems-in-scripts.txt');
 
 const SYSTEM_MESSAGE = `Вы — элитный коуч для русскоязычных сценаристов. Ваша задача — помочь пользователям анализировать и улучшать их сценарии или части сценариев, основываясь на контексте диалога и примерах из сценариев и советов, предоставленных вам в виде документов.`;
 
@@ -113,7 +113,7 @@ export async function POST(request: Request) {
     }
 
     // Load PDF file
-    const breakingBadPdfBase64 = loadPdfAsBase64('breaking_bad_pilot.pdf');
+    const breakingBadPdfBase64 = loadPdfAsBase64('src/lib/scenario-examples/breaking-bad-pilot.pdf');
 
     // 3. Create a streaming response from Anthropic
     const stream = new ReadableStream({

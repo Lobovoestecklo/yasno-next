@@ -1,8 +1,8 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-export function loadPdfAsBase64(pdfFileName: string): string {
-  const pdfPath = path.join(process.cwd(), 'public', 'scenario_examples', pdfFileName);
-  const pdfData = fs.readFileSync(pdfPath);
+export function loadPdfAsBase64(pdfPath: string): string {
+  const fullPath = path.join(process.cwd(), pdfPath);
+  const pdfData = fs.readFileSync(fullPath);
   return pdfData.toString('base64');
 }
