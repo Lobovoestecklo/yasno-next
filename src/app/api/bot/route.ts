@@ -71,15 +71,6 @@ const INITIAL_INSTRUCTION = `При анализе сценария и пред�
 
 Ваша задача — использовать информацию из перечисленных документов по максимуму, помогая анализировать и дорабатывать сценарии на высоком профессиональном уровне.`;
 
-// function chunkString(str: string, maxSize: number): string[] {
-//   const chunks: string[] = [];
-//   let index = 0;
-//   while (index < str.length) {
-//     chunks.push(str.slice(index, index + maxSize));
-//     index += maxSize;
-//   }
-//   return chunks;
-// }
 
 /**
  * Merge an array of text chunks so that the total ephemeral blocks do NOT exceed 4.
@@ -123,8 +114,6 @@ export async function POST(request: Request) {
 
     // Load PDF file
     const breakingBadPdfBase64 = loadPdfAsBase64('breaking_bad_pilot.pdf');
-    // const lostPdfBase64 = loadPdfAsBase64('lost_series_pilot_script_example.pdf');
-    const gameOfThronesPdfBase64 = loadPdfAsBase64('game_of_thrones_pilot_script.pdf');
 
     // 3. Create a streaming response from Anthropic
     const stream = new ReadableStream({
@@ -140,7 +129,7 @@ export async function POST(request: Request) {
             },
             body: JSON.stringify({
               model: 'claude-3-5-sonnet-20241022',
-              max_tokens: 1024,
+              max_tokens: 2096,
               system: [
                 {
                   type: 'text',
@@ -156,11 +145,11 @@ export async function POST(request: Request) {
                   text: `True Detective Pitch Example:\n${trueDetectivePitch}`,
                   cache_control: { type: 'ephemeral' }
                 },
-                  {
-                    type: 'text',
-                    text: `Common Script Problems:\n${typicalProblems}`,
-                    cache_control: { type: 'ephemeral' }
-                  }
+                {
+                  type: 'text',
+                  text: `Common Script Problems:\n${typicalProblems}`,
+                  cache_control: { type: 'ephemeral' }
+                }
               ],
               messages: [
                 {
@@ -174,26 +163,10 @@ export async function POST(request: Request) {
                         data: breakingBadPdfBase64,
                       },
                       cache_control: { type: 'ephemeral' },
-                    },
-                    // {
-                    //   type: 'document',
-                    //   source: {
-                    //     type: 'base64',
-                    //       media_type: 'application/pdf',
-                    //       data: gameOfThronesPdfBase64,
-                    //     },
-                    //     cache_control: { type: 'ephemeral' },
-                    // },                    
-                    {
-                      type: 'text',
-                      text: messages[0].content,
-                    },
-                  ],
+                    }
+                  ]
                 },
-                ...messages.slice(1).map(msg => ({
-                  role: 'user',
-                  content: msg.content
-                }))
+                ...messages
               ],
               stream: true,
               temperature: 0.0,
@@ -201,16 +174,14 @@ export async function POST(request: Request) {
           });
 
           if (!response.ok) {
-            const errorBody = await response.text();
-            console.error('Anthropic API error details:', errorBody);
-            throw new Error(`Anthropic API error: ${response.statusText} - ${errorBody}`);
+            console.log(response);
+            throw new Error(`Anthropic API error: ${response.statusText}`);
           }
 
           const reader = response.body?.getReader();
           if (!reader) {
             throw new Error('Response body is null');
           }
-
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
@@ -219,8 +190,8 @@ export async function POST(request: Request) {
             }
             controller.enqueue(value);
           }
-        } catch (err) {
-          controller.error(err);
+        } catch (error) {
+          controller.error(error);
         }
       },
     });
@@ -237,120 +208,11 @@ export async function POST(request: Request) {
     console.error('Ошибка в API чата:', error);
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Неизвестная ошибка',
+        error: error instanceof Error
+          ? error.message
+          : 'Произошла неизвестная ошибка'
       },
       { status: 500 }
     );
   }
 }
-
-
-
-
-// export async function POST(request: Request) {
-//   try {
-//     // 1. Parse incoming JSON
-//     const { messages } = await request.json();
-
-//     if (!messages || !Array.isArray(messages)) {
-//       return NextResponse.json(
-//         { error: 'Invalid or missing messages in request body' },
-//         { status: 400 }
-//       );
-//     }
-
-//     // 2. Load potentially large text (e.g. from "duglas.txt")
-//     const duglasContent = loadDuglasText() ?? '';
-
-//     // 3. Break the loaded text into smaller chunks so we don't exceed 200k token limit in a single block.
-//     //    Adjust as needed. This is a rough guess to keep us safely under the max token limit.
-//     const CHUNK_SIZE = 45000; // You can tune this based on your actual token usage
-//     let textChunks = chunkString(duglasContent, CHUNK_SIZE);
-
-//     // 4. If we have more than 4 chunks, merge them so ephemeral blocks do not exceed 4.
-//     textChunks = mergeChunksToMaxFour(textChunks);
-
-//     // Build up the system array with ephemeral blocks for each chunk
-//     const systemBlocks = [
-//       {
-//         type: 'text',
-//         text: SYSTEM_MESSAGE + '\n\n' + INITIAL_INSTRUCTION
-//       },
-//       ...textChunks.map(chunk => ({
-//         type: 'text',
-//         text: chunk,
-//         // Using ephemeral caching
-//         cache_control: { type: 'ephemeral' }
-//       }))
-//     ];
-
-//     // 5. Create a streaming response from Anthropic with ephemeral caching
-//     const stream = new ReadableStream({
-//       async start(controller) {
-//         try {
-//           const response = await fetch(ANTHROPIC_API_URL, {
-//             method: 'POST',
-//             headers: {
-//               'Content-Type': 'application/json',
-//               'X-API-Key': ANTHROPIC_API_KEY!,
-//               // The "anthropic-beta: prompt-caching-2024-07-31" header indicates usage of the new caching system
-//               'anthropic-version': '2023-06-01',
-//               'anthropic-beta': 'prompt-caching-2024-07-31'
-//             },
-//             body: JSON.stringify({
-//               model: 'claude-3-5-sonnet-20241022',
-//               max_tokens: 2096,
-//               // Pass in our newly constructed system blocks (now chunked with ephemeral caching)
-//               system: systemBlocks,
-//               messages: messages.map(msg => ({
-//                 role: 'user',
-//                 content: msg.content
-//               })),
-//               stream: true,
-//               temperature: 0.0,
-//             }),
-//           });
-
-//           if (!response.ok) {
-//             const errorBody = await response.text();
-//             console.error('Anthropic API error details:', errorBody);
-//             throw new Error(`Anthropic API error: ${response.statusText} - ${errorBody}`);
-//           }
-
-//           const reader = response.body?.getReader();
-//           if (!reader) {
-//             throw new Error('Response body is null');
-//           }
-
-//           while (true) {
-//             const { done, value } = await reader.read();
-//             if (done) {
-//               controller.close();
-//               break;
-//             }
-//             controller.enqueue(value);
-//           }
-//         } catch (err) {
-//           controller.error(err);
-//         }
-//       },
-//     });
-
-//     // 6. Return the streaming SSE response
-//     return new Response(stream, {
-//       headers: {
-//         'Content-Type': 'text/event-stream',
-//         'Cache-Control': 'no-cache',
-//         'Connection': 'keep-alive',
-//       },
-//     });
-//   } catch (error) {
-//     console.error('Ошибка в API чата:', error);
-//     return NextResponse.json(
-//       {
-//         error: error instanceof Error ? error.message : 'Неизвестная ошибка',
-//       },
-//       { status: 500 }
-//     );
-//   }
-// }
