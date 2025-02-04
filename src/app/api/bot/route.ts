@@ -240,7 +240,7 @@ export async function POST(request: Request) {
                   const jsonData = JSON.parse(line.slice(6));
                   // Re-stringify and enqueue the valid JSON for the client.
                   controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(jsonData)}\n\n`));
-                } catch (err) {
+                } catch {
                   // If parsing fails, send the raw line.
                   controller.enqueue(new TextEncoder().encode(`${line}\n\n`));
                 }
