@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { loadScriptFromFile } from '@/lib/utils/scriptLoader';
-import { encode } from 'gpt-tokenizer';
 
 // Define Anthropic API credentials and endpoint.
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
