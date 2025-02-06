@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { loadScriptFromFile } from '@/lib/utils/scriptLoader';
-import { encode } from 'gpt-tokenizer';
 
 // Define Anthropic API credentials and endpoint.
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -94,63 +93,8 @@ ${SYSTEM_MESSAGE}
 ${INITIAL_INSTRUCTION}
 `;
 
-// Outputs the token count of the combined system content for debugging.
-const systemTokenCount = encode(staticSystemContent).length;
-console.log('System content token count:', systemTokenCount);
-
-// Helper function that makes a non-streaming call to log full usage metrics.
-// This function is called in parallel with the streaming response.
-async function logUsageMetrics(messages: any) {
-  try {
-    const response = await fetch(ANTHROPIC_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-API-Key': ANTHROPIC_API_KEY!,
-        'anthropic-version': '2023-06-01',
-        'anthropic-beta': 'prompt-caching-2024-07-31'
-      },
-      body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 3120,
-        system: [
-          {
-            type: 'text',
-            text: staticSystemContent,
-            cache_control: { type: 'ephemeral' }
-          }
-        ],
-        messages: messages,
-        stream: false,
-        temperature: 0.0,
-      }),
-    });
-  
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Non-streaming API call error:", errorText);
-      return;
-    }
-  
-    const data = await response.json();
-  
-    console.log("Full Usage Metrics (non-streaming helper call):", {
-      cache_creation_input_tokens: data.usage.cache_creation_input_tokens || 0,
-      cache_read_input_tokens: data.usage.cache_read_input_tokens || 0,
-      input_tokens: data.usage.input_tokens || 0,
-      output_tokens: data.usage.output_tokens || 0,
-    });
-  
-  } catch (e) {
-    console.error("Error in logging usage metrics:", e);
-  }
-}
-
 export async function POST(request: Request) {
   try {
-    const requestStartTime = Date.now();
-    let firstTokenTime: number | null = null;
-    
     const { messages } = await request.json();
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
@@ -158,11 +102,7 @@ export async function POST(request: Request) {
         { status: 400 }
       );
     }
-    
-    // Start helper non-streaming call for logging full usage metrics.
-    logUsageMetrics(messages);
 
-    // Create a streaming response from Anthropic.
     const stream = new ReadableStream({
       async start(controller) {
         try {
@@ -209,39 +149,21 @@ export async function POST(request: Request) {
           
           while (true) {
             const { done, value } = await reader.read();
-            if (done) {
-              break;
-            }
+            if (done) break;
 
-            // Record time of the first token, if not already done.
-            if (!firstTokenTime) {
-              firstTokenTime = Date.now();
-              console.log('Time to first token:', firstTokenTime - requestStartTime, 'ms');
-            }
-            
             const chunk = new TextDecoder().decode(value);
             buffer += chunk;
             const lines = buffer.split('\n');
             buffer = lines.pop() || '';
 
             for (const line of lines) {
-              // Skip any event lines that are not valid JSON.
-              if (line.startsWith('event:')) {
-                console.log("Skipping non-JSON event line:", line);
-                continue;
-              }
+              if (line.startsWith('event:')) continue;
               if (line.startsWith('data: ')) {
-                // Skip the [DONE] message.
-                if (line.trim() === 'data: [DONE]') {
-                  continue;
-                }
+                if (line.trim() === 'data: [DONE]') continue;
                 try {
-                  // Parse the JSON payload from the line (after "data: ").
                   const jsonData = JSON.parse(line.slice(6));
-                  // Re-stringify and enqueue the valid JSON for the client.
                   controller.enqueue(new TextEncoder().encode(`data: ${JSON.stringify(jsonData)}\n\n`));
                 } catch {
-                  // If parsing fails, send the raw line.
                   controller.enqueue(new TextEncoder().encode(`${line}\n\n`));
                 }
               }
@@ -249,12 +171,6 @@ export async function POST(request: Request) {
           }
           
           controller.close();
-          // Log final performance metrics after the stream is complete.
-          console.log('Final Performance Metrics:', {
-            time_to_first_token_ms: firstTokenTime ? firstTokenTime - requestStartTime : null,
-            total_request_time_ms: Date.now() - requestStartTime,
-            timestamp: new Date().toISOString()
-          });
 
         } catch (error) {
           console.error('Stream processing error:', error);
