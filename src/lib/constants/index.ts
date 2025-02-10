@@ -6,8 +6,8 @@ export const ANTHROPIC_HEADERS = {
 }
 
 export const ANTHROPIC_POST_BODY_PARAMS = {
-    model: 'claude-3-5-sonnet-20240620',
-    max_tokens: 1024,
+    model: 'claude-3-5-sonnet-20241022',
+    max_tokens: 3120,
     stream: true
 }
 
