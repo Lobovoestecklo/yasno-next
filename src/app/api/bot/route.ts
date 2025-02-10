@@ -93,6 +93,10 @@ ${SYSTEM_MESSAGE}
 ${INITIAL_INSTRUCTION}
 `;
 
+export const config = {
+  runtime: 'nodejs'
+};
+
 export async function POST(request: Request) {
   try {
     const { messages } = await request.json();
