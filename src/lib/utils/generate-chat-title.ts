@@ -2,12 +2,19 @@ import { IMessage } from '@/types';
 
 export async function generateChatTitle(messages: IMessage[]): Promise<string> {
   if (!messages.length) {
-    return 'New Chat';
+    return 'Новый чат';
   }
 
   try {
-    console.log('Sending messages for title generation:', messages.slice(0, 3)); // Debug log
+    // Find the first user message for fallback
+    const firstUserMessage = messages.find(msg => msg.role === 'user');
+    const fallbackTitle = firstUserMessage 
+      ? firstUserMessage.content.length > 30
+        ? `${firstUserMessage.content.substring(0, 30)}...`
+        : firstUserMessage.content
+      : 'Новый чат';
 
+    // Try to generate title with API
     const response = await fetch('/api/generate-title', {
       method: 'POST',
       headers: {
@@ -16,27 +23,23 @@ export async function generateChatTitle(messages: IMessage[]): Promise<string> {
       body: JSON.stringify({ messages: messages.slice(0, 3) }),
     });
 
-    const data = await response.json();
-
     if (!response.ok) {
-      console.error('Title generation error:', data.error);
-      throw new Error(data.error || 'Failed to generate title');
+      console.log('Using fallback title due to API error:', fallbackTitle);
+      return fallbackTitle;
     }
 
-    return data.title;
+    const data = await response.json();
+    return data.title || fallbackTitle;
   } catch (error) {
-    console.error('Error generating title:', error);
-    
-    // Fallback to first user message if API fails
+    console.log('Error generating title, using fallback:', error);
+    // Use first user message as fallback title
     const firstUserMessage = messages.find(msg => msg.role === 'user');
     if (firstUserMessage) {
       const title = firstUserMessage.content.length > 30
         ? `${firstUserMessage.content.substring(0, 30)}...`
         : firstUserMessage.content;
-      console.log('Using fallback title:', title);
       return title;
     }
-    
-    return 'New Chat';
+    return 'Новый чат';
   }
 } 

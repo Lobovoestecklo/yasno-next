@@ -1,21 +1,31 @@
 'use client'
 
 import { IMessage } from '@/types';
-import { LOCAL_STORAGE_CHAT_MESSAGES_KEY, SCENARIO_MESSAGE_PREFIX } from '../constants';
+import { LOCAL_STORAGE_CHAT_MESSAGES_KEY, SCENARIO_MESSAGE_PREFIX, INITIAL_BOT_MESSAGE } from '../constants';
 import { getLSValue, setLSValue } from './local-storage';
+import { clearAllChatHistories } from './chat-history';
 
 export const getSavedMessages = (): IMessage[] => {
     const messages = getLSValue(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
-    return messages || [];
+    if (!messages || messages.length === 0) {
+        return [INITIAL_BOT_MESSAGE];
+    }
+    return messages[0]?.id === INITIAL_BOT_MESSAGE.id ? messages : [INITIAL_BOT_MESSAGE, ...messages];
 }
 
 export const saveMessages = (messages: IMessage[]) => {
-    setLSValue(LOCAL_STORAGE_CHAT_MESSAGES_KEY, messages);
+    // Ensure initial message is always present
+    const messagesWithInitial = messages[0]?.id === INITIAL_BOT_MESSAGE.id
+        ? messages
+        : [INITIAL_BOT_MESSAGE, ...messages];
+    setLSValue(LOCAL_STORAGE_CHAT_MESSAGES_KEY, messagesWithInitial);
 }
 
 export const clearMessagesAndReload = () => {
     if (window && window.localStorage) {
         localStorage.removeItem(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
+        clearAllChatHistories();
+        // Don't need to set initial message here as getSavedMessages will handle it
     }
 }
 

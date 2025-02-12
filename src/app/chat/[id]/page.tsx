@@ -33,9 +33,8 @@ export default function ChatPage() {
     messages,
     submitUserMessage,
     submitScenario,
-    isStreaming,
-    setMessages
-  } = useAnthropicMessages(setInput, initialMessages, saveMessages, getSavedMessages);
+    isStreaming
+  } = useAnthropicMessages(setInput, initialMessages, saveMessages);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -50,9 +49,17 @@ export default function ChatPage() {
     const initializeChat = async () => {
       if (chatId === 'new') {
         const existingMessages = getSavedMessages();
+        // Ensure initial bot message is present
+        const messagesWithInitial = existingMessages.length > 0 
+          ? (existingMessages[0]?.id === INITIAL_BOT_MESSAGE.id 
+              ? existingMessages 
+              : [INITIAL_BOT_MESSAGE, ...existingMessages])
+          : [INITIAL_BOT_MESSAGE];
+
         if (existingMessages.length > 0) {
           // If there are saved messages, create a new chat with them
-          const newChatId = addChatToHistory(existingMessages, 'Новый чат');
+          const newChatId = addChatToHistory(messagesWithInitial, 'Новый чат');
+          setInitialMessages(messagesWithInitial);
           router.replace(`/chat/${newChatId}`, { scroll: false });
         } else {
           // If no saved messages, create a new chat with initial message
@@ -66,7 +73,11 @@ export default function ChatPage() {
       // Handle existing chat
       const chatMessages = loadChat(chatId);
       if (chatMessages.length > 0) {
-        setInitialMessages(chatMessages);
+        // Ensure initial bot message is present in existing chats
+        const messagesWithInitial = chatMessages[0]?.id === INITIAL_BOT_MESSAGE.id
+          ? chatMessages
+          : [INITIAL_BOT_MESSAGE, ...chatMessages];
+        setInitialMessages(messagesWithInitial);
       } else {
         router.push('/');
       }
@@ -80,50 +91,27 @@ export default function ChatPage() {
     console.log('Current messages:', messages);
   }, [messages]);
 
+  // Add effect to update chat history when messages change
+  useEffect(() => {
+    if (chatId && chatId !== 'new' && messages.length > 0) {
+      updateChat(chatId, messages);
+    }
+  }, [chatId, messages]);
+
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      const userMessage: IMessage = {
-        role: 'user',
-        content: input.trim(),
-        id: Date.now().toString()
-      };
-
-      // Update messages immediately with user message
-      setMessages(prev => [...prev, userMessage]);
-      
       // Clear input right away
       setInput('');
       
       // Submit message and handle response
       await submitUserMessage(input);
-
-      // Update chat in persistent storage
-      if (chatId && chatId !== 'new') {
-        await updateChat(chatId, messages);
-      }
     }
   };
 
   const handlePredefinedMessage = (message: string) => {
     if (!chatId) return;
-    
-    const userMessage: IMessage = {
-      role: 'user',
-      content: message,
-      id: Date.now().toString()
-    };
-
-    // Update messages immediately
-    setMessages(prev => [...prev, userMessage]);
-    
-    // Submit message
     submitUserMessage(message);
-    
-    // Update chat storage
-    if (chatId !== 'new') {
-      updateChat(chatId, [...messages, userMessage]);
-    }
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -139,17 +127,22 @@ export default function ChatPage() {
     updateChat(chatId, [...messages, { role: 'user', content, id: Date.now().toString(), is_scenario: true }]);
   };
 
+  const handleClearHistory = useCallback(() => {
+    clearMessagesAndReload();
+    router.push('/');
+  }, [router]);
+
   return (
-    <Card className="relative min-h-[calc(100vh-3rem)] flex flex-col">
+    <Card className="relative min-h-[calc(91vh-3rem)] flex flex-col">
       <CardHeader className="flex flex-row items-center justify-between bg-black text-white p-4">
         <div className="flex items-center gap-2">
           <SidebarToggle />
           <h1 className="text-xl font-semibold">Сценарный Коуч</h1>
         </div>
-        <ClearChatHistoryDialog onAccept={clearMessagesAndReload} />
+        <ClearChatHistoryDialog onAccept={handleClearHistory} />
       </CardHeader>
 
-      <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-256px)] md:h-[calc(100vh-364px)] overflow-y-auto">
+      <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-266px)] md:h-[calc(100vh-374px)] overflow-y-auto">
         {messages.map((msg) => {
           if (msg.is_scenario) {
             return null;
@@ -179,9 +172,9 @@ export default function ChatPage() {
         <div ref={messagesEndRef} />
       </CardContent>
 
-      <CardFooter className="border-t p-4 md:p-6">
-        <div className="flex flex-col w-full gap-4">
-          <div className="flex gap-4 justify-center w-full">
+      <CardFooter className="border-t p-2">
+        <div className="flex flex-col w-full gap-6">
+          <div className="flex gap-20 justify-center w-full">
             <Button
               variant="outline"
               className="flex-1 max-w-[300px] whitespace-normal h-auto py-2"
@@ -208,11 +201,11 @@ export default function ChatPage() {
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Введите сообщение... (Shift + Enter для новой строки)"
-                className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+                className="flex-1 min-h-[50px] max-h-[200px] resize-none text-base leading-relaxed"
                 rows={2}
               />
-              <Button type="submit" size="icon" className="h-[60px] w-[60px]" disabled={isStreaming}>
-                <Send className="h-5 w-5" />
+              <Button type="submit" size="icon" className="h-[50px] w-[50px] flex-shrink-0" disabled={isStreaming}>
+                <Send className="h-4 w-4" />
                 <span className="sr-only">Отправить</span>
               </Button>
             </form>

@@ -3,4 +3,5 @@ export interface IMessage {
   content: string;
   is_bot: boolean;
   // ... any other existing properties
+  is_user_message?: boolean;
 } 
