@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { loadScriptFromFile } from '@/lib/utils/server/scriptLoader';
 
-// Define Anthropic API credentials and endpoint.
+// Define Anthropic API credentials and endpoint. t
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
 const ANTHROPIC_API_URL = 'https://api.anthropic.com/v1/messages';
 
