@@ -1,15 +1,12 @@
 'use client'
 
 import { IMessage } from '@/types';
-import { LOCAL_STORAGE_CHAT_MESSAGES_KEY, INITIAL_BOT_MESSAGE, SCENARIO_MESSAGE_PREFIX } from '../constants';
+import { LOCAL_STORAGE_CHAT_MESSAGES_KEY, SCENARIO_MESSAGE_PREFIX } from '../constants';
 import { getLSValue, setLSValue } from './local-storage';
 
 export const getSavedMessages = (): IMessage[] => {
     const messages = getLSValue(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
-    if (!messages) {
-        return [INITIAL_BOT_MESSAGE];
-    }
-    return messages;
+    return messages || [];
 }
 
 export const saveMessages = (messages: IMessage[]) => {
@@ -19,7 +16,6 @@ export const saveMessages = (messages: IMessage[]) => {
 export const clearMessagesAndReload = () => {
     if (window && window.localStorage) {
         localStorage.removeItem(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
-        window.location.reload();
     }
 }
 
@@ -33,3 +29,11 @@ export const extractLatestScenario = (messages: IMessage[]): string | null => {
     const result = latestScenario.replace(regex, '').trim();
     return result;
 }
+
+export const addChatToHistory = (messages: IMessage[], title: string): string => {
+    const chatId = Date.now().toString();
+    const chats = JSON.parse(localStorage.getItem('chats') || '{}');
+    chats[chatId] = { messages, title };
+    localStorage.setItem('chats', JSON.stringify(chats));
+    return chatId;
+};

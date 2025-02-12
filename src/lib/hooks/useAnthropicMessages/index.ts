@@ -9,13 +9,19 @@ import { IMessage } from '@/types';
 
 export const useAnthropicMessages = (
   setInputValue: (value: string) => void,
-  localStorageMessages: IMessage[],
+  initialMessages: IMessage[],
   saveMessages: (messages: IMessage[]) => void,
   getSavedMessages: () => IMessage[]
 ) => {
-  const [messages, setMessages] = useState<IMessage[]>(localStorageMessages);
+  const [messages, setMessages] = useState<IMessage[]>(initialMessages);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedMessageId, setStreamedMessageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
 
   const submitScenario = useCallback(async (scenario: string) => {
     const scenarioMessage: IMessage = {
@@ -29,7 +35,7 @@ export const useAnthropicMessages = (
       saveMessages(newMessages);
       return newMessages;
     });
-  }, [messages])
+  }, [saveMessages])
 
   const submitUserMessage = useCallback(async (message: string) => {
     const userMessage: IMessage = {
@@ -122,11 +128,7 @@ export const useAnthropicMessages = (
       setIsStreaming(false);
       setStreamedMessageId(null);
     }
-  }, [messages, setInputValue]);
-
-  useEffect(() => {
-    setMessages(localStorageMessages);
-  }, [localStorageMessages])
+  }, [messages, setInputValue, getSavedMessages, saveMessages]);
 
   return {
     submitUserMessage,
@@ -134,5 +136,6 @@ export const useAnthropicMessages = (
     messages,
     isStreaming,
     streamedMessageId,
+    setMessages
   };
 };

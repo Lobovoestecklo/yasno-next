@@ -106,3 +106,21 @@ body {
 .formatted-response p:hover {
     @apply bg-muted/30 rounded-sm px-2 -mx-2;
 }
+
+@layer utilities {
+  .container {
+    @apply mx-auto px-4;
+    max-width: 1280px;
+  }
+}
+
+/* Add smooth scrolling */
+.overflow-auto {
+  scrollbar-gutter: stable;
+  scroll-behavior: smooth;
+}
+
+/* Ensure content doesn't jump when scrollbar appears */
+html {
+  scrollbar-gutter: stable;
+}

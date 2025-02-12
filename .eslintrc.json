@@ -1,0 +1,12 @@
+{
+  "extends": "next/core-web-configs",
+  "rules": {
+    "@typescript-eslint/no-unused-vars": ["error", {
+      "varsIgnorePattern": "^_",
+      "argsIgnorePattern": "^_",
+      "destructuredArrayIgnorePattern": "^_",
+      "caughtErrorsIgnorePattern": "^_"
+    }],
+    "no-unused-vars": "off"
+  }
+} 

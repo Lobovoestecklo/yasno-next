@@ -8,9 +8,14 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import ScenarioDialog from "@/components/scenario-dialog"
 import { FormattedResponse } from '@/components/FormattedResponse'
-import { getSavedMessages, saveMessages, clearMessagesAndReload, extractLatestScenario } from '@/lib/utils/local-storage-chat-messages'
+import { getSavedMessages, saveMessages, clearMessagesAndReload } from '@/lib/utils/local-storage-chat-messages'
 import ClearChatHistoryDialog from '@/components/clear-chat-history-dialog'
 import { IMessage } from '@/types'
+import { useRouter } from 'next/navigation'
+import { startNewChat } from '@/lib/utils/chat-management'
+import { SidebarToggle } from '@/components/chat-history/sidebar-toggle'
+import { useSidebar } from '@/components/ui/sidebar'
+import { addChatToHistory } from '@/lib/utils/chat-history'
 
 const PREDEFINED_MESSAGES = {
   IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
@@ -19,20 +24,26 @@ const PREDEFINED_MESSAGES = {
 
 export default function Home() {
   const [input, setInput] = useState("");
-  const [localStorageMessages, setLocalStorageMessages] = useState<IMessage[]>([]);
-  const [scenario, setScenario] = useState<string | null>(null);
+  const [_localStorageMessages] = useState<IMessage[]>([]);
+  const [scenario] = useState<string | null>(null);
+  const router = useRouter();
+  const { } = useSidebar();
 
   const {
     messages,
     submitUserMessage,
     submitScenario,
     isStreaming
-  } = useAnthropicMessages(setInput, localStorageMessages, saveMessages, getSavedMessages);
+  } = useAnthropicMessages(setInput, _localStorageMessages, saveMessages, getSavedMessages);
 
-  const sendMessage = (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      submitUserMessage(input);
+      await submitUserMessage(input);
+      if (messages.length === 1) {
+        const chatId = await startNewChat(messages[0]);
+        router.push(`/chat/${chatId}`);
+      }
     }
   };
 
@@ -49,28 +60,44 @@ export default function Home() {
 
   const handleScenarioSubmit = (content: string) => {
     submitScenario(content);
-    // console.log('Scenario submitted:', content);
+    // Uncomment if you need this functionality later
     // setScenario(content);
   };
 
   useEffect(() => {
-    const localStorageMessages = getSavedMessages();
-    setLocalStorageMessages(localStorageMessages);
-    const scenario = extractLatestScenario(localStorageMessages);
-    setScenario(scenario);
-  }, []);
+    const initializeChat = async () => {
+      const savedMessages = getSavedMessages();
+      
+      if (savedMessages.length > 0) {
+        // Clear local storage as we're moving messages to persistent storage
+        clearMessagesAndReload();
+        const chatId = await startNewChat(savedMessages);
+        router.push(`/chat/${chatId}`);
+      }
+    };
+
+    initializeChat();
+  }, [router]);
+
+  useEffect(() => {
+    if (messages.length > 0) {
+      const chatId = addChatToHistory(messages, 'Новый сценарий');
+      router.push(`/chat/${chatId}`);
+    }
+  }, [messages, router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 md:py-[60px]">
-      <Card className="max-w-2xl mx-auto min-h-screen shadow-none border-0 rounded-none md:min-h-0 md:rounded-lg md:border">
-        <CardHeader className="border-b bg-primary px-6 py-4 h-[60px] md:rounded-t-lg relative">
-          <h1 className="text-xl font-semibold text-primary-foreground text-center tracking-tighter">
-            Сценарный Коуч
-          </h1>
+    <div>
+      <Card className="relative min-h-[calc(100vh-3rem)] flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between bg-black text-white p-4">
+          <div className="flex items-center gap-2">
+            <SidebarToggle />
+            <h1 className="text-xl font-semibold">Сценарный Коуч</h1>
+          </div>
           <ClearChatHistoryDialog onAccept={clearMessagesAndReload} />
         </CardHeader>
-
-        <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-256px)] md:h-[calc(100vh-364px)] overflow-y-auto">
+        
+        <CardContent className="flex-1 overflow-auto pb-24">
           {messages.map((msg) => {
             if (msg.is_scenario) {
               return null
@@ -98,8 +125,8 @@ export default function Home() {
             )
           })}
         </CardContent>
-
-        <CardFooter className="border-t p-4 md:p-6">
+        
+        <CardFooter className="absolute bottom-0 left-0 right-0 bg-background border-t p-4">
           <div className="flex flex-col w-full gap-4">
             <div className="flex gap-4 justify-center w-full">
               <Button
