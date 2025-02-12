@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, KeyboardEvent, useEffect } from 'react'
+import React, { useState, KeyboardEvent, useEffect, useCallback } from 'react'
 import { useAnthropicMessages } from '@/lib/hooks/useAnthropicMessages'
 import { Send } from 'lucide-react'
 import { Button } from "@/components/ui/button"
@@ -8,31 +8,49 @@ import { Textarea } from "@/components/ui/textarea"
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card"
 import ScenarioDialog from "@/components/scenario-dialog"
 import { FormattedResponse } from '@/components/FormattedResponse'
-import { getSavedMessages, saveMessages, clearMessagesAndReload, extractLatestScenario } from '@/lib/utils/local-storage-chat-messages'
+import { getSavedMessages, saveMessages, clearMessagesAndReload } from '@/lib/utils/local-storage-chat-messages'
 import ClearChatHistoryDialog from '@/components/clear-chat-history-dialog'
 import { IMessage } from '@/types'
+import { useRouter } from 'next/navigation'
+import { startNewChat } from '@/lib/utils/chat-management'
+import { SidebarToggle } from '@/components/chat-history/sidebar-toggle'
+import { useSidebar } from '@/components/ui/sidebar'
 
 const PREDEFINED_MESSAGES = {
   IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
   CREATE_NEW: "У меня нет сценария, я создаю все с нуля"
 } as const;
 
+const INITIAL_BOT_MESSAGE: IMessage = {
+  id: 'initial-bot-message',
+  role: 'assistant',
+  content: 'Привет! Я готов помочь тебе создать или улучшить сценарий. Что ты хочешь сделать?',
+  is_scenario: false
+};
+
 export default function Home() {
   const [input, setInput] = useState("");
-  const [localStorageMessages, setLocalStorageMessages] = useState<IMessage[]>([]);
-  const [scenario, setScenario] = useState<string | null>(null);
+  const [_localStorageMessages] = useState<IMessage[]>([INITIAL_BOT_MESSAGE]);
+  const [scenario] = useState<string | null>(null);
+  const router = useRouter();
+  const { } = useSidebar();
 
   const {
     messages,
     submitUserMessage,
     submitScenario,
-    isStreaming
-  } = useAnthropicMessages(setInput, localStorageMessages, saveMessages, getSavedMessages);
+    isStreaming,
+    setMessages
+  } = useAnthropicMessages(setInput, _localStorageMessages, saveMessages);
 
-  const sendMessage = (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      submitUserMessage(input);
+      await submitUserMessage(input);
+      if (messages.length >= 2) {
+        const chatId = await startNewChat(messages);
+        router.push(`/chat/${chatId}`);
+      }
     }
   };
 
@@ -49,28 +67,39 @@ export default function Home() {
 
   const handleScenarioSubmit = (content: string) => {
     submitScenario(content);
-    // console.log('Scenario submitted:', content);
+    // Uncomment if you need this functionality later
     // setScenario(content);
   };
 
+  const handleClearHistory = useCallback(() => {
+    clearMessagesAndReload();
+    setMessages([INITIAL_BOT_MESSAGE]); // Reset to initial message instead of empty array
+  }, [setMessages]);
+
   useEffect(() => {
-    const localStorageMessages = getSavedMessages();
-    setLocalStorageMessages(localStorageMessages);
-    const scenario = extractLatestScenario(localStorageMessages);
-    setScenario(scenario);
-  }, []);
+    const initializeChat = async () => {
+      const savedMessages = getSavedMessages();
+      if (savedMessages.length > 0) {
+        clearMessagesAndReload();
+        const chatId = await startNewChat(savedMessages);
+        router.push(`/chat/${chatId}`);
+      }
+    };
+    initializeChat();
+  }, [router]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-800 md:py-[60px]">
-      <Card className="max-w-2xl mx-auto min-h-screen shadow-none border-0 rounded-none md:min-h-0 md:rounded-lg md:border">
-        <CardHeader className="border-b bg-primary px-6 py-4 h-[60px] md:rounded-t-lg relative">
-          <h1 className="text-xl font-semibold text-primary-foreground text-center tracking-tighter">
-            Сценарный Коуч
-          </h1>
-          <ClearChatHistoryDialog onAccept={clearMessagesAndReload} />
+    <div>
+      <Card className="relative min-h-[calc(100vh-1rem)] flex flex-col">
+        <CardHeader className="flex flex-row items-center justify-between bg-black text-white p-4">
+          <div className="flex items-center gap-2">
+            <SidebarToggle />
+            <h1 className="text-xl font-semibold">Сценарный Коуч</h1>
+          </div>
+          <ClearChatHistoryDialog onAccept={handleClearHistory} />
         </CardHeader>
-
-        <CardContent className="p-4 md:p-6 space-y-4 h-[calc(100vh-256px)] md:h-[calc(100vh-364px)] overflow-y-auto">
+        
+        <CardContent className="flex-1 overflow-auto pb-20">
           {messages.map((msg) => {
             if (msg.is_scenario) {
               return null
@@ -98,10 +127,10 @@ export default function Home() {
             )
           })}
         </CardContent>
-
-        <CardFooter className="border-t p-4 md:p-6">
-          <div className="flex flex-col w-full gap-4">
-            <div className="flex gap-4 justify-center w-full">
+        
+        <CardFooter className="absolute bottom-0 left-0 right-0 bg-background border-t p-5">
+          <div className="flex flex-col w-full gap-3">
+            <div className="flex gap-3 justify-center w-full">
               <Button
                 variant="outline"
                 className="flex-1 max-w-[300px] whitespace-normal h-auto py-2"
@@ -128,11 +157,11 @@ export default function Home() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   placeholder="Введите сообщение... (Shift + Enter для новой строки)"
-                  className="flex-1 min-h-[60px] max-h-[200px] resize-none"
+                  className="flex-1 min-h-[50px] max-h-[200px] resize-none text-base leading-relaxed"
                   rows={2}
                 />
-                <Button type="submit" size="icon" className="h-[60px] w-[60px]" disabled={isStreaming}>
-                  <Send className="h-5 w-5" />
+                <Button type="submit" size="icon" className="h-[50px] w-[50px] flex-shrink-0" disabled={isStreaming}>
+                  <Send className="h-4 w-4" />
                   <span className="sr-only">Отправить</span>
                 </Button>
               </form>

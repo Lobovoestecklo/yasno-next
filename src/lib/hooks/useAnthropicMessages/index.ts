@@ -9,13 +9,18 @@ import { IMessage } from '@/types';
 
 export const useAnthropicMessages = (
   setInputValue: (value: string) => void,
-  localStorageMessages: IMessage[],
-  saveMessages: (messages: IMessage[]) => void,
-  getSavedMessages: () => IMessage[]
+  initialMessages: IMessage[],
+  saveMessages: (messages: IMessage[]) => void
 ) => {
-  const [messages, setMessages] = useState<IMessage[]>(localStorageMessages);
+  const [messages, setMessages] = useState<IMessage[]>(initialMessages);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedMessageId, setStreamedMessageId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (initialMessages.length > 0) {
+      setMessages(initialMessages);
+    }
+  }, [initialMessages]);
 
   const submitScenario = useCallback(async (scenario: string) => {
     const scenarioMessage: IMessage = {
@@ -29,23 +34,25 @@ export const useAnthropicMessages = (
       saveMessages(newMessages);
       return newMessages;
     });
-  }, [messages])
+  }, [saveMessages])
 
   const submitUserMessage = useCallback(async (message: string) => {
+    if (isStreaming) {
+      return;
+    }
+
     const userMessage: IMessage = {
       id: uuidv4(),
       role: 'user',
       content: message,
     };
-    setMessages((prev) => {
-      const newMessages = [...prev, userMessage];
-      saveMessages(newMessages);
-      return newMessages;
-    });
-    setInputValue('');
-    setIsStreaming(true);
 
-    const messagesToPost = prepareMessagesForPost([...messages, userMessage]);
+    setIsStreaming(true);
+    
+    const updatedMessages = [...messages, userMessage];
+    setMessages(updatedMessages);
+    saveMessages(updatedMessages);
+    setInputValue('');
 
     try {
       const response = await fetch('/api/bot', {
@@ -55,25 +62,37 @@ export const useAnthropicMessages = (
         },
         body: JSON.stringify({
           ...ANTHROPIC_POST_BODY_PARAMS,
-          messages: messagesToPost,
+          messages: prepareMessagesForPost(updatedMessages),
           system: ANTHROPIC_SYSTEM_MESSAGE,
         }),
       });
 
       if (!response.ok) {
-        console.log(`HTTP error! status: ${response.status}`);
-        alert('Что-то пошло не так, попробуйте еще раз!')
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const reader = response.body?.getReader();
       if (!reader) {
-        console.log('Response body is not readable');
-        alert('Что-то пошло не так, попробуйте еще раз!')
-        return;
+        throw new Error('Response body is not readable');
       }
 
       let assistantMessageId: string | null = null;
       let assistantMessageContent = '';
+
+      const initialAssistantMessage: IMessage = {
+        id: uuidv4(),
+        role: 'assistant',
+        content: '',
+      };
+      
+      setMessages(prev => {
+        const newMessages = [...prev, initialAssistantMessage];
+        saveMessages(newMessages);
+        return newMessages;
+      });
+      
+      assistantMessageId = initialAssistantMessage.id || null;
+      setStreamedMessageId(assistantMessageId);
 
       while (true) {
         const { done, value } = await reader.read();
@@ -83,50 +102,51 @@ export const useAnthropicMessages = (
         const lines = chunk.split('\n');
 
         for (const line of lines) {
-          if (line.startsWith('data: ')) {
-            const data = JSON.parse(line.slice(6));
-            if (data.type === 'message_stop' && assistantMessageId) {
-              saveMessages([...getSavedMessages(), {
-                id: assistantMessageId,
-                role: 'assistant',
-                content: assistantMessageContent,
-              }]);
-            }
-            if (data.type === 'message_start') {
-              assistantMessageId = data.message.id;
-              setStreamedMessageId(assistantMessageId);
-            } else if (data.type === 'content_block_delta' && data.delta.type === 'text_delta') {
-              assistantMessageContent += data.delta.text;
-              setMessages((prev) => {
-                const newMessages = [...prev];
-                const lastMessage = newMessages[newMessages.length - 1];
-                if (lastMessage.role === 'assistant' && lastMessage.id === assistantMessageId) {
-                  lastMessage.content = assistantMessageContent;
-                } else {
-                  newMessages.push({
-                    id: assistantMessageId || uuidv4(),
-                    role: 'assistant',
-                    content: assistantMessageContent,
-                  });
-                }
-                return newMessages;
-              });
-            }
+          if (!line.startsWith('data: ')) continue;
+          
+          const data = JSON.parse(line.slice(6));
+          if (data.type === 'content_block_delta' && data.delta.type === 'text_delta') {
+            assistantMessageContent += data.delta.text;
+            setMessages(prev => {
+              const newMessages = [...prev];
+              const assistantMessage = newMessages.find(msg => msg.id && msg.id === assistantMessageId);
+              if (assistantMessage) {
+                assistantMessage.content = assistantMessageContent;
+                saveMessages(newMessages);
+              }
+              return newMessages;
+            });
           }
         }
       }
+
+      return new Promise<void>((resolve) => {
+        setMessages(prev => {
+          const finalMessages = prev.map(msg => 
+            msg.id === assistantMessageId 
+              ? { ...msg, content: assistantMessageContent }
+              : msg
+          );
+          saveMessages(finalMessages);
+          resolve();
+          return finalMessages;
+        });
+      });
+
     } catch (error) {
       console.error('Error submitting message:', error);
       alert('Что-то пошло не так, попробуйте еще раз!');
+      setMessages(prev => {
+        const newMessages = prev.filter(msg => msg.id !== userMessage.id);
+        saveMessages(newMessages);
+        return newMessages;
+      });
+      throw error;
     } finally {
       setIsStreaming(false);
       setStreamedMessageId(null);
     }
-  }, [messages, setInputValue]);
-
-  useEffect(() => {
-    setMessages(localStorageMessages);
-  }, [localStorageMessages])
+  }, [messages, setInputValue, isStreaming, saveMessages]);
 
   return {
     submitUserMessage,
@@ -134,5 +154,6 @@ export const useAnthropicMessages = (
     messages,
     isStreaming,
     streamedMessageId,
+    setMessages
   };
 };

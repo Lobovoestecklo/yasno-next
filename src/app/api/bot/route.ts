@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { loadScriptFromFile } from '@/lib/utils/scriptLoader';
+import { loadScriptFromFile } from '@/lib/utils/server/scriptLoader';
 
 // Define Anthropic API credentials and endpoint.
 const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
@@ -23,6 +23,7 @@ const INITIAL_INSTRUCTION = `При анализе сценария и пред�
 - Темпу повествования
 - Мотивации героев
 - Тематическим элементам
+- Авторскому голосу и стилю
 
 2. Опирайтесь на материалы из следующих документов:
 - breaking-bad-pilot.txt: используйте данный пилот как пример удачной драматургии и проработки вступительной серии.
@@ -42,6 +43,11 @@ const INITIAL_INSTRUCTION = `При анализе сценария и пред�
 7. Помогайте развивать идею сценария, задавая наводящие вопросы и предлагая методы её расширения в полноценный проект, а также указывайте, с какими типичными проблемами (из typical-problems-in-scripts.txt) пользователь может столкнуться на этом пути.
 
 8. Рекомендуйте способы улучшения описания персонажей, атмосферы и деталей в разработке сцен, обращая внимание на преимущества пилотного формата, продемонстрированные в breaking_bad_pilot.pdf.
+
+9. При анализе авторского голоса и стиля:
+- Определите уникальные стилистические особенности текста
+- Выявите характерные приемы повествования
+- Укажите, на каких известных сценаристов/режиссеров похож авторский стиль, обосновывая сходства конкретными примерами
 
 Перед тем, как дать окончательный ответ, проведите тщательный анализ сценария или запроса пользователя. Оберните этот процесс в тег <разбор_сценария>. В рамках этого разбора:
 
@@ -71,6 +77,7 @@ const INITIAL_INSTRUCTION = `При анализе сценария и пред�
 - Поддерживайте высокий уровень владения русским языком в ваших ответах. Используйте уместную русскую терминологию сценарного мастерства и идиоматические выражения.
 - Если вам нужно больше информации для предоставления исчерпывающего ответа, задайте уточняющие вопросы в рамках вашего ответа.
 - Всегда стремитесь давать советы, которые одновременно практичны и креативны, помогая сценаристу улучшить свою работу, оставаясь верным своему видению.
+- Если ваш ответ получается длинным, разделите его на логические части и в конце каждой части спрашивайте у пользователя "Мне продолжить?"
 
 Ваша задача — использовать информацию из перечисленных документов по максимуму, помогая анализировать и дорабатывать сценарии на высоком профессиональном уровне.`;
 
@@ -93,10 +100,6 @@ ${SYSTEM_MESSAGE}
 ${INITIAL_INSTRUCTION}
 `;
 
-export const config = {
-  runtime: 'nodejs'
-};
-
 export async function POST(request: Request) {
   try {
     const { messages } = await request.json();
@@ -107,50 +110,57 @@ export async function POST(request: Request) {
       );
     }
 
+    // Add timeout signal to the fetch request
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 25000); // Set to 25s to be safe
+
+    const response = await fetch(ANTHROPIC_API_URL, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-API-Key': ANTHROPIC_API_KEY!,
+        'anthropic-version': '2023-06-01',
+        'anthropic-beta': 'prompt-caching-2024-07-31'
+      },
+      body: JSON.stringify({
+        model: 'claude-3-5-sonnet-20241022',
+        max_tokens: 3120,
+        system: [
+          {
+            type: 'text',
+            text: staticSystemContent,
+            cache_control: { type: 'ephemeral' }
+          }
+        ],
+        messages: messages,
+        stream: true,
+        temperature: 0.0,
+      }),
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    
+    if (!response.ok) {
+      const errorBody = await response.text();
+      console.error('Anthropic API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        body: errorBody
+      });
+      throw new Error(`Anthropic API error: ${response.statusText} (${response.status})`);
+    }
+
+    const reader = response.body?.getReader();
+    if (!reader) {
+      throw new Error('Response body is null');
+    }
+
+    let buffer = '';
+    
     const stream = new ReadableStream({
       async start(controller) {
         try {
-          const response = await fetch(ANTHROPIC_API_URL, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'X-API-Key': ANTHROPIC_API_KEY!,
-              'anthropic-version': '2023-06-01',
-              'anthropic-beta': 'prompt-caching-2024-07-31'
-            },
-            body: JSON.stringify({
-              model: 'claude-3-5-sonnet-20241022',
-              max_tokens: 3120,
-              system: [
-                {
-                  type: 'text',
-                  text: staticSystemContent,
-                  cache_control: { type: 'ephemeral' }
-                }
-              ],
-              messages: messages,
-              stream: true,
-              temperature: 0.0,
-            }),
-          });
-
-          if (!response.ok) {
-            const errorBody = await response.text();
-            console.error('Anthropic API Error:', {
-              status: response.status,
-              statusText: response.statusText,
-              body: errorBody
-            });
-            throw new Error(`Anthropic API error: ${response.statusText} (${response.status})`);
-          }
-
-          const reader = response.body?.getReader();
-          if (!reader) {
-            throw new Error('Response body is null');
-          }
-
-          let buffer = '';
-          
           while (true) {
             const { done, value } = await reader.read();
             if (done) break;
