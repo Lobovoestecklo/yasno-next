@@ -31,14 +31,25 @@ export function Sidebar({ children }: { children: React.ReactNode }) {
   const { open } = useSidebar();
 
   return (
-    <aside
-      className={cn(
-        'absolute top-0 left-0 h-full w-64 bg-background border-r z-40 transition-transform duration-300 ease-in-out',
-        open ? 'translate-x-0' : '-translate-x-full'
-      )}
-    >
-      {children}
-    </aside>
+    <>
+      {/* Overlay */}
+      <div
+        className={cn(
+          'fixed inset-0 bg-background/80 backdrop-blur-sm z-30 transition-opacity duration-300',
+          open ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        )}
+      />
+      
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed top-0 left-0 h-full w-64 bg-background border-r z-40 transition-transform duration-300 ease-in-out shadow-lg',
+          open ? 'translate-x-0' : '-translate-x-full'
+        )}
+      >
+        {children}
+      </aside>
+    </>
   );
 }
 

@@ -26,7 +26,6 @@ export function AppSidebar() {
 
   const handleNewChat = () => {
     setOpen(false);
-    clearMessagesAndReload();
     router.push('/chat/new');
   };
 

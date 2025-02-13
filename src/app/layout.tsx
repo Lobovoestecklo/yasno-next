@@ -19,17 +19,13 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru">
-      <body className={inter.className}>
+      <body className={`${inter.className} min-h-screen`}>
         <TooltipProvider>
           <SidebarProvider>
-            <div className="relative min-h-screen">
-              <AppSidebar />
-              <div className="flex justify-center">
-                <main className="w-full max-w-3xl">
-                  {children}
-                </main>
-              </div>
-            </div>
+            <AppSidebar />
+            <main className="min-h-screen overflow-hidden">
+              {children}
+            </main>
           </SidebarProvider>
         </TooltipProvider>
       </body>

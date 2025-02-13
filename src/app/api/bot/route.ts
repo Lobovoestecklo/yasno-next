@@ -100,6 +100,34 @@ ${SYSTEM_MESSAGE}
 ${INITIAL_INSTRUCTION}
 `;
 
+const MAX_RETRIES = 3;
+const INITIAL_TIMEOUT = 30000; // 30 seconds
+const BACKOFF_FACTOR = 1.5;
+
+async function fetchWithRetry(url: string, options: RequestInit, retries = MAX_RETRIES, timeout = INITIAL_TIMEOUT): Promise<Response> {
+  try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+
+    clearTimeout(timeoutId);
+    return response;
+  } catch (error) {
+    if (retries > 0) {
+      console.log(`Retrying request. Attempts remaining: ${retries - 1}`);
+      // Exponential backoff
+      const nextTimeout = timeout * BACKOFF_FACTOR;
+      await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s before retry
+      return fetchWithRetry(url, options, retries - 1, nextTimeout);
+    }
+    throw error;
+  }
+}
+
 export async function POST(request: Request) {
   try {
     const { messages } = await request.json();
@@ -110,11 +138,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // Add timeout signal to the fetch request
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 25000); // Set to 25s to be safe
-
-    const response = await fetch(ANTHROPIC_API_URL, {
+    const response = await fetchWithRetry(ANTHROPIC_API_URL, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -135,12 +159,9 @@ export async function POST(request: Request) {
         messages: messages,
         stream: true,
         temperature: 0.0,
-      }),
-      signal: controller.signal,
+      })
     });
 
-    clearTimeout(timeoutId);
-    
     if (!response.ok) {
       const errorBody = await response.text();
       console.error('Anthropic API Error:', {
