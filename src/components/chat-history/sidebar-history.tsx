@@ -22,6 +22,7 @@ import {
 } from '@/components/ui/sidebar';
 import { ChatItem } from './chat-item';
 import { ChatHistory, deleteChatHistory, getAllChatHistories } from '@/lib/utils/chat-history';
+import { INITIAL_BOT_MESSAGE } from '@/lib/constants';
 
 type GroupedChats = {
   today: ChatHistory[];
@@ -39,10 +40,28 @@ export function SidebarHistory() {
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const [showDeleteDialog, setShowDeleteDialog] = React.useState(false);
 
-  // Only load chat histories after component mount
+  // Load chat histories and set up refresh interval
   React.useEffect(() => {
+    const loadChats = () => {
+      const allChats = getAllChatHistories();
+      // Only filter out empty chats or those with just the initial message
+      const validChats = allChats.filter(chat => 
+        chat.messages && 
+        chat.messages.length > 1
+      );
+      setChats(validChats);
+    };
+
+    // Initial load
     setMounted(true);
-    setChats(getAllChatHistories());
+    loadChats();
+
+    // Set up periodic refresh
+    const refreshInterval = setInterval(loadChats, 1000);
+
+    return () => {
+      clearInterval(refreshInterval);
+    };
   }, []);
 
   // Don't render anything until mounted

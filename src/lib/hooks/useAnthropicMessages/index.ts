@@ -6,11 +6,13 @@ import { v4 as uuidv4 } from 'uuid';
 import { ANTHROPIC_HEADERS, ANTHROPIC_POST_BODY_PARAMS, ANTHROPIC_SYSTEM_MESSAGE, SCENARIO_MESSAGE_PREFIX } from '@/lib/constants';
 import { prepareMessagesForPost } from '@/lib/utils/anthropic';
 import { IMessage } from '@/types';
+import { updateChat } from '@/lib/utils/chat-management';
 
 export const useAnthropicMessages = (
   setInputValue: (value: string) => void,
   initialMessages: IMessage[],
-  saveMessages: (messages: IMessage[]) => void
+  saveMessages: (messages: IMessage[]) => void,
+  currentChatId?: string
 ) => {
   const [messages, setMessages] = useState<IMessage[]>(initialMessages);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -128,6 +130,12 @@ export const useAnthropicMessages = (
               : msg
           );
           saveMessages(finalMessages);
+          
+          // After assistant response is complete, always update chat
+          if (currentChatId) {
+            updateChat(currentChatId, finalMessages).catch(console.error);
+          }
+          
           resolve();
           return finalMessages;
         });
@@ -146,7 +154,7 @@ export const useAnthropicMessages = (
       setIsStreaming(false);
       setStreamedMessageId(null);
     }
-  }, [messages, setInputValue, isStreaming, saveMessages]);
+  }, [messages, setInputValue, isStreaming, saveMessages, currentChatId]);
 
   return {
     submitUserMessage,

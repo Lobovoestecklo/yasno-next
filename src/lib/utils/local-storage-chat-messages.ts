@@ -5,6 +5,9 @@ import { LOCAL_STORAGE_CHAT_MESSAGES_KEY, SCENARIO_MESSAGE_PREFIX, INITIAL_BOT_M
 import { getLSValue, setLSValue } from './local-storage';
 import { clearAllChatHistories } from './chat-history';
 
+// Helper function to generate unique ID - same as in chat-history.ts
+const generateId = () => Math.random().toString(36).substring(2, 9);
+
 export const getSavedMessages = (): IMessage[] => {
     const messages = getLSValue(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
     if (!messages || messages.length === 0) {
@@ -25,7 +28,6 @@ export const clearMessagesAndReload = () => {
     if (window && window.localStorage) {
         localStorage.removeItem(LOCAL_STORAGE_CHAT_MESSAGES_KEY);
         clearAllChatHistories();
-        // Don't need to set initial message here as getSavedMessages will handle it
     }
 }
 
@@ -41,7 +43,7 @@ export const extractLatestScenario = (messages: IMessage[]): string | null => {
 }
 
 export const addChatToHistory = (messages: IMessage[], title: string): string => {
-    const chatId = Date.now().toString();
+    const chatId = generateId();
     const chats = JSON.parse(localStorage.getItem('chats') || '{}');
     chats[chatId] = { messages, title };
     localStorage.setItem('chats', JSON.stringify(chats));
