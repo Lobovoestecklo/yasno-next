@@ -24,7 +24,7 @@ export const updateChat = async (chatId: string, messages: IMessage[]) => {
   updateChatHistory(chatId, messages);
 
   // Generate new title if we have a conversation (more than just initial message)
-  if (messages.length > 1) {
+  if (messages.length === 2 || messages.length === 3) {
     const hasUserMessages = messages.some(msg => msg.role === 'user');
     const hasAssistantMessages = messages.some(msg => msg.role === 'assistant' && msg.id !== INITIAL_BOT_MESSAGE.id);
 

@@ -104,14 +104,15 @@ export default function ChatPage() {
   }, [chatId, setMessages]);
 
   // Update chat history when messages change, but not during streaming
-  useEffect(() => {
-    const updateChatIfNeeded = async () => {
-      if (currentChatId && messages.length > 0 && !isLoading && !isStreaming) {
-        await updateChat(currentChatId, messages);
-      }
-    };
-    updateChatIfNeeded();
-  }, [currentChatId, messages, isLoading, isStreaming]);
+  // wat is this?
+  // useEffect(() => {
+  //   const updateChatIfNeeded = async () => {
+  //     if (currentChatId && messages.length > 0 && !isLoading && !isStreaming) {
+  //       await updateChat(currentChatId, messages);
+  //     }
+  //   };
+  //   updateChatIfNeeded();
+  // }, [currentChatId, messages, isLoading, isStreaming]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
