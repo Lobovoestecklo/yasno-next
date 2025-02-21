@@ -11,8 +11,7 @@ import { updateChat } from '@/lib/utils/chat-management';
 export const useAnthropicMessages = (
   setInputValue: (value: string) => void,
   initialMessages: IMessage[],
-  saveMessages: (messages: IMessage[]) => void,
-  currentChatId?: string
+  currentChatId: string
 ) => {
   const [messages, setMessages] = useState<IMessage[]>(initialMessages);
   const [isStreaming, setIsStreaming] = useState(false);
@@ -33,10 +32,10 @@ export const useAnthropicMessages = (
     }
     setMessages((prev) => {
       const newMessages = [...prev, scenarioMessage];
-      saveMessages(newMessages);
+      updateChat(currentChatId, newMessages);
       return newMessages;
     });
-  }, [saveMessages])
+  }, [currentChatId])
 
   const submitUserMessage = useCallback(async (message: string) => {
     if (isStreaming) {
@@ -50,10 +49,10 @@ export const useAnthropicMessages = (
     };
 
     setIsStreaming(true);
-    
+
     const updatedMessages = [...messages, userMessage];
     setMessages(updatedMessages);
-    saveMessages(updatedMessages);
+    updateChat(currentChatId, updatedMessages);
     setInputValue('');
 
     try {
@@ -86,13 +85,12 @@ export const useAnthropicMessages = (
         role: 'assistant',
         content: '',
       };
-      
+
       setMessages(prev => {
         const newMessages = [...prev, initialAssistantMessage];
-        saveMessages(newMessages);
         return newMessages;
       });
-      
+
       assistantMessageId = initialAssistantMessage.id || null;
       setStreamedMessageId(assistantMessageId);
 
@@ -105,7 +103,7 @@ export const useAnthropicMessages = (
 
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
-          
+
           const data = JSON.parse(line.slice(6));
           if (data.type === 'content_block_delta' && data.delta.type === 'text_delta') {
             assistantMessageContent += data.delta.text;
@@ -114,7 +112,6 @@ export const useAnthropicMessages = (
               const assistantMessage = newMessages.find(msg => msg.id && msg.id === assistantMessageId);
               if (assistantMessage) {
                 assistantMessage.content = assistantMessageContent;
-                saveMessages(newMessages);
               }
               return newMessages;
             });
@@ -124,18 +121,15 @@ export const useAnthropicMessages = (
 
       return new Promise<void>((resolve) => {
         setMessages(prev => {
-          const finalMessages = prev.map(msg => 
-            msg.id === assistantMessageId 
+          const finalMessages = prev.map(msg =>
+            msg.id === assistantMessageId
               ? { ...msg, content: assistantMessageContent }
               : msg
           );
-          saveMessages(finalMessages);
-          
+
           // After assistant response is complete, always update chat
-          if (currentChatId) {
-            updateChat(currentChatId, finalMessages).catch(console.error);
-          }
-          
+          updateChat(currentChatId, finalMessages).catch(console.error);
+
           resolve();
           return finalMessages;
         });
@@ -146,7 +140,7 @@ export const useAnthropicMessages = (
       alert('Что-то пошло не так, попробуйте еще раз!');
       setMessages(prev => {
         const newMessages = prev.filter(msg => msg.id !== userMessage.id);
-        saveMessages(newMessages);
+        updateChat(currentChatId, newMessages).catch(console.error);
         return newMessages;
       });
       throw error;
@@ -154,7 +148,7 @@ export const useAnthropicMessages = (
       setIsStreaming(false);
       setStreamedMessageId(null);
     }
-  }, [messages, setInputValue, isStreaming, saveMessages, currentChatId]);
+  }, [messages, setInputValue, isStreaming, currentChatId]);
 
   return {
     submitUserMessage,
