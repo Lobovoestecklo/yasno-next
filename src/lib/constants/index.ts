@@ -18,7 +18,7 @@ export const LOCAL_STORAGE_CHAT_MESSAGES_KEY = 'scenario-chat-messages';
 export const INITIAL_BOT_MESSAGE: IMessage = {
     id: 'assistant-initial',
     role: 'assistant',
-    content: "Привет! Я скриптантино и я помогу тебе улучшить твой сценарий. Расскажи мне о твоем сценарии, и я помогу тебе с ним.",
+    content: "Привет! Я Scriptantino и я помогу тебе улучшить твой сценарий. Расскажи мне о твоем сценарии, и я помогу тебе с ним.",
 };
 
 export const SCENARIO_MESSAGE_PREFIX = `Вот мой сценарий:`;
