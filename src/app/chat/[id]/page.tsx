@@ -8,14 +8,13 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import ScenarioDialog from '@/components/scenario-dialog';
 import { FormattedResponse } from '@/components/FormattedResponse';
-import { getSavedMessages, saveMessages, clearMessagesAndReload, addChatToHistory } from '@/lib/utils/local-storage-chat-messages';
-import ClearChatHistoryDialog from '@/components/clear-chat-history-dialog';
 import { IMessage } from '@/types';
 import { useRouter, useParams } from 'next/navigation';
-import { loadChat, updateChat, startNewChat } from '@/lib/utils/chat-management';
+import { updateChat, startNewChat } from '@/lib/utils/chat-management';
 import { SidebarToggle } from '@/components/chat-history/sidebar-toggle';
 import { INITIAL_BOT_MESSAGE } from '@/lib/constants';
 import { ChatLoading } from '@/components/ui/chat-loading';
+import { extractLatestScenario, loadChat } from '@/lib/utils/chat-history';
 
 const PREDEFINED_MESSAGES = {
   IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
@@ -31,6 +30,7 @@ export default function ChatPage() {
   const [initialMessages, setInitialMessages] = useState<IMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string>(chatId);
+  const [scenario, setScenario] = useState<string | null>(null);
 
   const {
     messages,
@@ -38,7 +38,7 @@ export default function ChatPage() {
     submitUserMessage,
     submitScenario,
     isStreaming
-  } = useAnthropicMessages(setInput, initialMessages, saveMessages, currentChatId);
+  } = useAnthropicMessages(setInput, initialMessages, currentChatId);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -71,6 +71,8 @@ export default function ChatPage() {
           
           if (chatMessages && chatMessages.length > 0) {
             setInitialMessages(chatMessages);
+            const scenario = extractLatestScenario(chatMessages);
+            setScenario(scenario);
             setMessages(chatMessages);
           } else {
             // If chat not found or empty, start a new chat
@@ -102,14 +104,15 @@ export default function ChatPage() {
   }, [chatId, setMessages]);
 
   // Update chat history when messages change, but not during streaming
-  useEffect(() => {
-    const updateChatIfNeeded = async () => {
-      if (currentChatId && messages.length > 0 && !isLoading && !isStreaming) {
-        await updateChat(currentChatId, messages);
-      }
-    };
-    updateChatIfNeeded();
-  }, [currentChatId, messages, isLoading, isStreaming]);
+  // wat is this?
+  // useEffect(() => {
+  //   const updateChatIfNeeded = async () => {
+  //     if (currentChatId && messages.length > 0 && !isLoading && !isStreaming) {
+  //       await updateChat(currentChatId, messages);
+  //     }
+  //   };
+  //   updateChatIfNeeded();
+  // }, [currentChatId, messages, isLoading, isStreaming]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -140,11 +143,6 @@ export default function ChatPage() {
     updateChat(currentChatId, [...messages, { role: 'user', content, id: Date.now().toString(), is_scenario: true }]);
   };
 
-  const handleClearHistory = useCallback(() => {
-    clearMessagesAndReload();
-    router.push('/');
-  }, [router]);
-
   if (isLoading) {
     return <ChatLoading />;
   }
@@ -156,9 +154,8 @@ export default function ChatPage() {
           <CardHeader className="flex-none flex flex-row items-center justify-between bg-black text-white p-4 sticky top-0 z-10 rounded-t-[20px]">
             <div className="flex items-center gap-2">
               <SidebarToggle />
-              <h1 className="text-xl font-semibold">Скриптантино</h1>
+              <h1 className="text-xl font-semibold">Scriptantino</h1>
             </div>
-            <ClearChatHistoryDialog onAccept={handleClearHistory} />
           </CardHeader>
 
           <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto min-h-0">
@@ -217,7 +214,7 @@ export default function ChatPage() {
 
               <div className="flex w-full gap-2 items-center">
                 <form onSubmit={sendMessage} className="flex w-full gap-2 items-center relative">
-                  <ScenarioDialog onSubmit={handleScenarioSubmit} scenario={null} />
+                  <ScenarioDialog onSubmit={handleScenarioSubmit} scenario={scenario} />
                   <Textarea
                     value={input}
                     onChange={(e) => setInput(e.target.value)}

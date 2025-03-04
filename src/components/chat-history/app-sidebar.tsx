@@ -3,7 +3,6 @@
 import { useRouter } from 'next/navigation';
 import { Plus, X } from 'lucide-react';
 import Link from 'next/link';
-import { clearMessagesAndReload } from '@/lib/utils/local-storage-chat-messages';
 
 import { Button } from '@/components/ui/button';
 import {
