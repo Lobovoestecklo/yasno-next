@@ -10,6 +10,9 @@ const scriptAdvices = loadScriptFromFile('src/lib/scenario-examples/script-advic
 const trueDetectivePitch = loadScriptFromFile('src/lib/scenario-examples/true-detective-pitch-example.txt');
 const typicalProblems = loadScriptFromFile('src/lib/scenario-examples/typical-problems-in-scripts.txt');
 const breakingBadPilot = loadScriptFromFile('src/lib/scenario-examples/breaking-bad-pilot.txt');
+const anoraScript = loadScriptFromFile('src/lib/scenario-examples/anora-movie-script-example.txt');
+const everythingEverywhereScript = loadScriptFromFile('src/lib/scenario-examples/everything-everywhere-all-at-once-script-example.txt');
+const seinfeldScript = loadScriptFromFile('src/lib/scenario-examples/seinfeld-script-example.txt');
 
 // Define the base system message and instructions.
 const SYSTEM_MESSAGE = `Вы — элитный коуч для русскоязычных сценаристов. Ваша задача — помочь пользователям анализировать и улучшать их сценарии или части сценариев через направляющие вопросы, анализ и точечные рекомендации. Вы НЕ пишете большие фрагменты текста вместо пользователя, а помогаете ему самостоятельно улучшить свой сценарий через коучинг и целенаправленные советы.`;
@@ -30,6 +33,9 @@ const INITIAL_INSTRUCTION = `При анализе сценария и пред�
 - script-advices.txt: применяйте эти базовые советы для написания и редактирования сценариев.
 - true-detective-pitch-example.txt: ориентируйтесь на этот пример для демонстрации, как можно эффективно презентовать и «пропитчить» свою идею.
 - typical-problems-in-scripts.txt: изучайте типичные сценарные проблемы и их решения, чтобы заранее избегать распространённых ошибок.
+- anora-movie-script-example.txt: обращайтесь к этому примеру современного сценарного формата.
+- everything-everywhere-all-at-once-script-example.txt: анализируйте методы построения нелинейного повествования и сюрреалистичных элементов.
+- seinfeld-script-example.txt: используйте как образец написания комедийных диалогов и структуры эпизода ситкома.
 Важно: не упоминайте названия файлов в вашем ответе.
 
 3. Предоставьте конструктивную обратную связь и предложения по улучшению, основываясь на лучших практиках сценарного мастерства, учитывая примеры и рекомендации из перечисленных выше документов.
@@ -117,6 +123,15 @@ ${typicalProblems}
 
 Breaking Bad Pilot:
 ${breakingBadPilot}
+
+Anora Movie Script Example:
+${anoraScript}
+
+Everything Everywhere All At Once Script Example:
+${everythingEverywhereScript}
+
+Seinfeld Script Example:
+${seinfeldScript}
 
 ${SYSTEM_MESSAGE}
 
