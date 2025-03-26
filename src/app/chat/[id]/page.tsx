@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, KeyboardEvent, useEffect, useRef, useCallback, Suspense } from 'react';
-import { useAnthropicMessages } from '@/lib/hooks/useAnthropicMessages';
+import { useMessages } from '@/lib/hooks/useMessages';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -38,7 +38,7 @@ export default function ChatPage() {
     submitUserMessage,
     submitScenario,
     isStreaming
-  } = useAnthropicMessages(setInput, initialMessages, currentChatId);
+  } = useMessages(setInput, initialMessages, currentChatId);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
