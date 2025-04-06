@@ -3,10 +3,8 @@
 import React, { useState, KeyboardEvent, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useMessages } from '@/lib/hooks/useMessages';
 import { Send } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import { Button } from '@/components/ui/button'; // Можно убрать, если не нужен
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import ScenarioDialog from '@/components/scenario-dialog';
 import { FormattedResponse } from '@/components/FormattedResponse';
 import { IMessage } from '@/types';
 import { useRouter, useParams } from 'next/navigation';
@@ -14,12 +12,9 @@ import { updateChat, startNewChat } from '@/lib/utils/chat-management';
 import { SidebarToggle } from '@/components/chat-history/sidebar-toggle';
 import { INITIAL_BOT_MESSAGE } from '@/lib/constants';
 import { ChatLoading } from '@/components/ui/chat-loading';
-import { extractLatestScenario, loadChat } from '@/lib/utils/chat-history';
+import { loadChat } from '@/lib/utils/chat-history';
 
-const PREDEFINED_MESSAGES = {
-  IMPROVE_EXISTING: "У меня уже есть сценарий и я хочу его улучшить",
-  CREATE_NEW: "У меня нет сценария, я создаю все с нуля"
-} as const;
+const PREDEFINED_MESSAGE = "режим тренировки";
 
 export default function ChatPage() {
   const params = useParams();
@@ -30,13 +25,11 @@ export default function ChatPage() {
   const [initialMessages, setInitialMessages] = useState<IMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string>(chatId);
-  const [scenario, setScenario] = useState<string | null>(null);
 
   const {
     messages,
     setMessages,
     submitUserMessage,
-    submitScenario,
     isStreaming
   } = useMessages(setInput, initialMessages, currentChatId);
 
@@ -44,7 +37,6 @@ export default function ChatPage() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, []);
 
-  // Scroll when messages change or when streaming
   useEffect(() => {
     scrollToBottom();
   }, [messages, isStreaming, scrollToBottom]);
@@ -53,29 +45,21 @@ export default function ChatPage() {
     const initializeChat = async () => {
       try {
         if (chatId === 'new') {
-          // For new chats, start with initial message and create chat entry
           const defaultMessages = [INITIAL_BOT_MESSAGE];
           setInitialMessages(defaultMessages);
           setMessages(defaultMessages);
-          
-          // Create new chat entry with temporary title
+
           const newChatId = await startNewChat(defaultMessages);
           setCurrentChatId(newChatId);
-          
-          // Update URL without causing a reload
           window.history.replaceState({}, '', `/chat/${newChatId}`);
         } else {
           setCurrentChatId(chatId);
-          // Load existing chat
           const chatMessages = loadChat(chatId);
-          
+
           if (chatMessages && chatMessages.length > 0) {
             setInitialMessages(chatMessages);
-            const scenario = extractLatestScenario(chatMessages);
-            setScenario(scenario);
             setMessages(chatMessages);
           } else {
-            // If chat not found or empty, start a new chat
             const defaultMessages = [INITIAL_BOT_MESSAGE];
             setInitialMessages(defaultMessages);
             setMessages(defaultMessages);
@@ -86,7 +70,6 @@ export default function ChatPage() {
         }
       } catch (error) {
         console.error('Error initializing chat:', error);
-        // Handle error gracefully - start a new chat
         const defaultMessages = [INITIAL_BOT_MESSAGE];
         setInitialMessages(defaultMessages);
         setMessages(defaultMessages);
@@ -103,24 +86,10 @@ export default function ChatPage() {
     }
   }, [chatId, setMessages]);
 
-  // Update chat history when messages change, but not during streaming
-  // wat is this?
-  // useEffect(() => {
-  //   const updateChatIfNeeded = async () => {
-  //     if (currentChatId && messages.length > 0 && !isLoading && !isStreaming) {
-  //       await updateChat(currentChatId, messages);
-  //     }
-  //   };
-  //   updateChatIfNeeded();
-  // }, [currentChatId, messages, isLoading, isStreaming]);
-
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      // Clear input right away
       setInput('');
-      
-      // Submit message and handle response
       await submitUserMessage(input);
     }
   };
@@ -137,10 +106,9 @@ export default function ChatPage() {
     }
   };
 
-  const handleScenarioSubmit = (content: string) => {
-    if (!currentChatId) return;
-    submitScenario(content);
-    updateChat(currentChatId, [...messages, { role: 'user', content, id: Date.now().toString(), is_scenario: true }]);
+  // Можно добавить логику очистки истории, если нужно
+  const handleClearHistory = () => {
+    console.log('История очищена!');
   };
 
   if (isLoading) {
@@ -149,21 +117,31 @@ export default function ChatPage() {
 
   return (
     <main className="min-h-screen flex items-center justify-center">
-      <div className="w-[800px] max-w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] mx-auto">
+      <div className="w-[900px] max-w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] mx-auto">
         <Card className="h-full flex flex-col bg-white shadow-lg rounded-[20px]">
+          {/* Шапка */}
           <CardHeader className="flex-none flex flex-row items-center justify-between bg-black text-white p-4 sticky top-0 z-10 rounded-t-[20px]">
             <div className="flex items-center gap-2">
               <SidebarToggle />
-              <h1 className="text-xl font-semibold">Scriptantino</h1>
+              <h1 className="text-xl font-semibold">Коммуникационный коуч</h1>
+            </div>
+            <div className="flex items-center gap-4">
+              
+              <Button
+                variant="outline"
+                onClick={() => handlePredefinedMessage(PREDEFINED_MESSAGE)}
+                className="text-black border-white px-4 py-1 rounded"
+              >
+                {PREDEFINED_MESSAGE}
+              </Button>
             </div>
           </CardHeader>
 
+          {/* Содержимое чата */}
           <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto min-h-0">
             <Suspense fallback={<ChatLoading />}>
               {messages.map((msg) => {
-                if (msg.is_scenario) {
-                  return null;
-                }
+                if (msg.is_scenario) return null;
                 return (
                   <div
                     key={msg.id}
@@ -191,53 +169,55 @@ export default function ChatPage() {
             </Suspense>
           </CardContent>
 
+          {/* Поле ввода + кнопка */}
           <CardFooter className="flex-none border-t p-4">
-            <div className="flex flex-col w-full gap-4">
-              <div className="flex flex-col sm:flex-row gap-4 justify-between w-full">
-                <Button
-                  variant="outline"
-                  className="flex-1 whitespace-normal h-auto py-3 text-sm sm:text-base rounded-[12px] border-2"
-                  onClick={() => handlePredefinedMessage(PREDEFINED_MESSAGES.IMPROVE_EXISTING)}
-                  disabled={isStreaming}
-                >
-                  {PREDEFINED_MESSAGES.IMPROVE_EXISTING}
-                </Button>
-                <Button
-                  variant="outline"
-                  className="flex-1 whitespace-normal h-auto py-3 text-sm sm:text-base rounded-[12px] border-2"
-                  onClick={() => handlePredefinedMessage(PREDEFINED_MESSAGES.CREATE_NEW)}
-                  disabled={isStreaming}
-                >
-                  {PREDEFINED_MESSAGES.CREATE_NEW}
-                </Button>
-              </div>
-
-              <div className="flex w-full gap-2 items-center">
-                <form onSubmit={sendMessage} className="flex w-full gap-2 items-center relative">
-                  <ScenarioDialog onSubmit={handleScenarioSubmit} scenario={scenario} />
-                  <Textarea
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={handleKeyDown}
-                    placeholder="Введите сообщение... (Shift + Enter для новой строки)"
-                    className="flex-1 min-h-[50px] max-h-[200px] resize-none text-sm md:text-base leading-relaxed"
-                    rows={2}
-                  />
-                  <Button 
-                    type="submit" 
-                    size="icon" 
-                    className="h-[50px] w-[50px] flex-shrink-0" 
-                    disabled={isStreaming}
-                  >
-                    <Send className="h-4 w-4" />
-                    <span className="sr-only">Отправить</span>
-                  </Button>
-                </form>
-              </div>
-            </div>
+            <form onSubmit={sendMessage} className="relative flex items-center w-full">
+              {/* Многострочное поле без рамок */}
+              <textarea
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Введите сообщение... (Shift + Enter для новой строки)"
+                rows={2}
+                className="
+                  flex-1
+                  min-h-[50px]
+                  max-h-[200px]
+                  resize-none
+                  text-sm
+                  md:text-base
+                  leading-relaxed
+                  pr-10
+                  bg-transparent
+                  border-none
+                  outline-none
+                  focus:ring-0
+                "
+              />
+              {/* Кнопка отправки без рамки и фона */}
+              <button
+                type="submit"
+                disabled={isStreaming}
+                className="
+                  absolute
+                  right-2
+                  bottom-3
+                  p-0
+                  m-0
+                  bg-transparent
+                  border-none
+                  cursor-pointer
+                  text-gray-500
+                  hover:text-gray-700
+                "
+              >
+                <Send className="h-8 w-8" />
+                <span className="sr-only">Отправить</span>
+              </button>
+            </form>
           </CardFooter>
         </Card>
       </div>
     </main>
   );
-} 
+}

@@ -10,7 +10,7 @@ export function ChatLoading() {
           <CardHeader className="flex-none flex flex-row items-center justify-between bg-black text-white p-4 sticky top-0 z-10">
             <div className="flex items-center gap-2">
               <SidebarToggle />
-              <h1 className="text-xl font-semibold">Scriptantino</h1>
+              <h1 className="text-xl font-semibold">Коммуникационный коуч</h1>
             </div>
           </CardHeader>
 

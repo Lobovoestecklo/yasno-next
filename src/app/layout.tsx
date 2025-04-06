@@ -8,8 +8,8 @@ import { TooltipProvider } from "@/components/ui/tooltip"
 const inter = Inter({ subsets: ['latin', 'cyrillic'] })
 
 export const metadata: Metadata = {
-  title: 'Scriptantino',
-  description: 'Scriptantino',
+  title: 'Коммуникационный коуч',
+  description: 'Коммуникационный коуч',
 }
 
 export default function RootLayout({

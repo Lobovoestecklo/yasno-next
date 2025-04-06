@@ -88,23 +88,23 @@ body {
 }
 
 .formatted-response {
-    @apply text-sm leading-relaxed space-y-2;
+  @apply text-sm leading-relaxed space-y-2;
 }
 
 .formatted-response p {
-    @apply transition-colors duration-200;
+  @apply transition-colors duration-200;
 }
 
 .formatted-response h3 {
-    @apply transition-colors duration-200 px-2 py-1 -mx-2 rounded-sm;
+  @apply transition-colors duration-200 px-2 py-1 -mx-2 rounded-sm;
 }
 
 .formatted-response h3:hover {
-    @apply bg-primary/10;
+  @apply bg-primary/10;
 }
 
 .formatted-response p:hover {
-    @apply bg-muted/30 rounded-sm px-2 -mx-2;
+  @apply bg-muted/30 rounded-sm px-2 -mx-2;
 }
 
 @layer utilities {
@@ -112,15 +112,35 @@ body {
     @apply mx-auto px-4;
     max-width: 1280px;
   }
+  .border-border {
+    border-color: hsl(var(--border));
+  }
+  .bg-background {
+    background-color: hsl(var(--background));
+  }
+  .text-foreground {
+    color: hsl(var(--foreground));
+  }
+  /* Стандартный класс bg-muted */
+  .bg-muted {
+    background-color: hsl(var(--muted));
+  }
+  /* Классы с прозрачностью. Экранированы символы "/" */
+  .bg-primary\/10 {
+    background-color: hsla(var(--primary), 0.1);
+  }
+  .bg-muted\/30 {
+    background-color: hsla(var(--muted), 0.3);
+  }
 }
 
-/* Add smooth scrolling */
+/* Плавная прокрутка */
 .overflow-auto {
   scrollbar-gutter: stable;
   scroll-behavior: smooth;
 }
 
-/* Container classes for layout stability */
+/* Стили контейнеров */
 .chat-container {
   min-height: calc(100vh);
   width: 100%;
@@ -136,7 +156,7 @@ body {
   background-color: hsl(var(--background));
 }
 
-/* Ensure content doesn't jump when scrollbar appears */
+/* Предотвращение скачков контента при появлении скроллбара */
 html {
   scrollbar-gutter: stable;
 }
