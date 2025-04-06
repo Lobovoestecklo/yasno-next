@@ -3,9 +3,8 @@
 import React, { useState, KeyboardEvent, useEffect, useRef, useCallback, Suspense } from 'react';
 import { useMessages } from '@/lib/hooks/useMessages';
 import { Send } from 'lucide-react';
-import { Button } from '@/components/ui/button'; // Можно убрать, если не нужен
+import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
-import { FormattedResponse } from '@/components/FormattedResponse';
 import { IMessage } from '@/types';
 import { useRouter, useParams } from 'next/navigation';
 import { updateChat, startNewChat } from '@/lib/utils/chat-management';
@@ -26,12 +25,7 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string>(chatId);
 
-  const {
-    messages,
-    setMessages,
-    submitUserMessage,
-    isStreaming
-  } = useMessages(setInput, initialMessages, currentChatId);
+  const { messages, setMessages, submitUserMessage, isStreaming } = useMessages(setInput, initialMessages, currentChatId);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -55,7 +49,6 @@ export default function ChatPage() {
         } else {
           setCurrentChatId(chatId);
           const chatMessages = loadChat(chatId);
-
           if (chatMessages && chatMessages.length > 0) {
             setInitialMessages(chatMessages);
             setMessages(chatMessages);
@@ -89,7 +82,6 @@ export default function ChatPage() {
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (input.trim()) {
-      setInput('');
       await submitUserMessage(input);
     }
   };
@@ -106,9 +98,9 @@ export default function ChatPage() {
     }
   };
 
-  // Можно добавить логику очистки истории, если нужно
   const handleClearHistory = () => {
     console.log('История очищена!');
+    // Добавьте логику очистки, если требуется
   };
 
   if (isLoading) {
@@ -126,7 +118,6 @@ export default function ChatPage() {
               <h1 className="text-xl font-semibold">Коммуникационный коуч</h1>
             </div>
             <div className="flex items-center gap-4">
-              
               <Button
                 variant="outline"
                 onClick={() => handlePredefinedMessage(PREDEFINED_MESSAGE)}
@@ -140,9 +131,8 @@ export default function ChatPage() {
           {/* Содержимое чата */}
           <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto min-h-0">
             <Suspense fallback={<ChatLoading />}>
-              {messages.map((msg) => {
-                if (msg.is_scenario) return null;
-                return (
+              {messages.map((msg) =>
+                msg.is_scenario ? null : (
                   <div
                     key={msg.id}
                     className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
@@ -154,62 +144,32 @@ export default function ChatPage() {
                           : 'bg-black text-white'
                       }`}
                     >
-                      {msg.role === 'assistant' ? (
-                        <FormattedResponse content={msg.content} />
-                      ) : (
-                        <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                          {msg.content}
-                        </p>
-                      )}
+                      <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                        {msg.content}
+                      </p>
                     </div>
                   </div>
-                );
-              })}
+                )
+              )}
               <div ref={messagesEndRef} />
             </Suspense>
           </CardContent>
 
-          {/* Поле ввода + кнопка */}
+          {/* Поле ввода и кнопка отправки */}
           <CardFooter className="flex-none border-t p-4">
             <form onSubmit={sendMessage} className="relative flex items-center w-full">
-              {/* Многострочное поле без рамок */}
               <textarea
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Введите сообщение... (Shift + Enter для новой строки)"
                 rows={2}
-                className="
-                  flex-1
-                  min-h-[50px]
-                  max-h-[200px]
-                  resize-none
-                  text-sm
-                  md:text-base
-                  leading-relaxed
-                  pr-10
-                  bg-transparent
-                  border-none
-                  outline-none
-                  focus:ring-0
-                "
+                className="flex-1 min-h-[50px] max-h-[200px] resize-none text-sm md:text-base leading-relaxed pr-10 bg-transparent border-none outline-none focus:ring-0 whitespace-pre-wrap"
               />
-              {/* Кнопка отправки без рамки и фона */}
               <button
                 type="submit"
                 disabled={isStreaming}
-                className="
-                  absolute
-                  right-2
-                  bottom-3
-                  p-0
-                  m-0
-                  bg-transparent
-                  border-none
-                  cursor-pointer
-                  text-gray-500
-                  hover:text-gray-700
-                "
+                className="absolute right-2 bottom-3 p-0 m-0 bg-transparent border-none cursor-pointer text-gray-500 hover:text-gray-700"
               >
                 <Send className="h-8 w-8" />
                 <span className="sr-only">Отправить</span>

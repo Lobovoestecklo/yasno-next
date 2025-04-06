@@ -1,8 +1,10 @@
+'use client';
+
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { IMessage } from '@/types';
-import { updateChat } from '@/lib/utils/chat-management';
+import { updateChatHistory } from '@/lib/utils/chat-history';
 import { prepareMessagesForOpenAI } from '@/lib/utils/openai';
 
 export const useOpenAIMessages = (
@@ -15,9 +17,7 @@ export const useOpenAIMessages = (
   const [streamedMessageId, setStreamedMessageId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (initialMessages.length > 0) {
-      setMessages(initialMessages);
-    }
+    setMessages(initialMessages);
   }, [initialMessages]);
 
   const submitUserMessage = useCallback(async (message: string) => {
@@ -31,9 +31,9 @@ export const useOpenAIMessages = (
 
     setIsStreaming(true);
 
-    const updatedMessages = [...messages, userMessage];
-    setMessages(updatedMessages);
-    updateChat(currentChatId, updatedMessages);
+    const newMessages = [...messages, userMessage];
+    setMessages(newMessages);
+    updateChatHistory(currentChatId, newMessages);
     setInputValue('');
 
     try {
@@ -43,20 +43,15 @@ export const useOpenAIMessages = (
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: prepareMessagesForOpenAI(updatedMessages),
+          messages: prepareMessagesForOpenAI(newMessages),
         }),
       });
 
-      if (!response.ok) {
+      if (!response.ok || !response.body) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
-      const reader = response.body?.getReader();
-      if (!reader) {
-        throw new Error('Response body is not readable');
-      }
-
-      let assistantMessageId: string | null = null;
+      const reader = response.body.getReader();
       let assistantMessageContent = '';
 
       const initialAssistantMessage: IMessage = {
@@ -65,9 +60,8 @@ export const useOpenAIMessages = (
         content: '',
       };
 
-      setMessages(prev => [...prev, initialAssistantMessage]);
-      assistantMessageId = initialAssistantMessage.id ?? null;
-      setStreamedMessageId(assistantMessageId);
+      setMessages((prev) => [...prev, initialAssistantMessage]);
+      setStreamedMessageId(initialAssistantMessage.id ?? null);
 
       while (true) {
         const { done, value } = await reader.read();
@@ -75,59 +69,51 @@ export const useOpenAIMessages = (
 
         const chunk = new TextDecoder().decode(value);
         const lines = chunk.split('\n');
-
         for (const line of lines) {
           if (!line.startsWith('data: ')) continue;
-
           const data = JSON.parse(line.slice(6));
           if (data.type === 'content_block_delta' && data.delta.type === 'text_delta') {
             assistantMessageContent += data.delta.text;
-            setMessages(prev => {
-              const newMessages = [...prev];
-              const assistantMessage = newMessages.find(msg => msg.id === assistantMessageId);
-              if (assistantMessage) {
-                assistantMessage.content = assistantMessageContent;
-              }
-              return newMessages;
-            });
+            setMessages((prev) =>
+              prev.map((msg) =>
+                msg.id === initialAssistantMessage.id
+                  ? { ...msg, content: assistantMessageContent }
+                  : msg
+              )
+            );
           }
         }
       }
 
-      return new Promise<void>((resolve) => {
-        setMessages(prev => {
-          const finalMessages = prev.map(msg =>
-            msg.id === assistantMessageId
-              ? { ...msg, content: assistantMessageContent }
-              : msg
-          );
-
-          updateChat(currentChatId, finalMessages).catch(console.error);
-          resolve();
-          return finalMessages;
-        });
+      setMessages((prev) => {
+        const finalMessages = prev.map((msg) =>
+          msg.id === initialAssistantMessage.id
+            ? { ...msg, content: assistantMessageContent }
+            : msg
+        );
+        updateChatHistory(currentChatId, finalMessages);
+        return finalMessages;
       });
-
     } catch (error) {
       console.error('Error submitting message:', error);
       alert('Что-то пошло не так, попробуйте еще раз!');
-      setMessages(prev => {
-        const newMessages = prev.filter(msg => msg.id !== userMessage.id);
-        updateChat(currentChatId, newMessages).catch(console.error);
-        return newMessages;
+      setMessages((prev) => {
+        const filtered = prev.filter((msg) => msg.id !== userMessage.id);
+        updateChatHistory(currentChatId, filtered);
+        return filtered;
       });
       throw error;
     } finally {
       setIsStreaming(false);
       setStreamedMessageId(null);
     }
-  }, [messages, setInputValue, isStreaming, currentChatId]);
+  }, [isStreaming, currentChatId, setInputValue, messages]);
 
   return {
     submitUserMessage,
     messages,
     isStreaming,
     streamedMessageId,
-    setMessages
+    setMessages,
   };
 };

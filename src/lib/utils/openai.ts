@@ -9,9 +9,11 @@ let openai: OpenAI | null = null;
 export const getOpenAIClient = () => {
   // Only initialize in server context
   if (typeof window === 'undefined' && !openai) {
-    openai = new OpenAI({
-      apiKey: process.env.OPENAI_API_KEY,
-    });
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      throw new Error("OPENAI_API_KEY is not defined in the environment variables.");
+    }
+    openai = new OpenAI({ apiKey });
   }
   return openai;
 };
@@ -19,27 +21,25 @@ export const getOpenAIClient = () => {
 // Convert our app message format to OpenAI format
 export const prepareMessagesForOpenAI = (messages: IMessage[]) => {
   return messages.map((message) => {
-    // Format for user messages - using input_text type
     if (message.role === 'user') {
       return {
         role: "user",
         content: [
           {
             type: "input_text",
-            text: message.content
-          }
-        ]
+            text: message.content,
+          },
+        ],
       };
     }
-    // Format for assistant messages - using output_text type
     return {
       role: "assistant",
       content: [
         {
           type: "output_text",
-          text: message.content
-        }
-      ]
+          text: message.content,
+        },
+      ],
     };
   });
 };
