@@ -6,5 +6,5 @@ export const useMessages = (
   initialMessages: IMessage[],
   currentChatId: string
 ): UseMessagesResult => {
-  return useOpenAIMessages(setInputValue, initialMessages, currentChatId);
+  return useOpenAIMessages(setInputValue, initialMessages, currentChatId) as UseMessagesResult;
 };

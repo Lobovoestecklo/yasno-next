@@ -3,15 +3,15 @@
 import { useState, useCallback, useEffect } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 
-import { IMessage, UseMessagesResult } from '@/types'; // ✅ импорт UseMessagesResult отсюда
+import { IMessage, UseMessagesResult } from '@/types';
 import { updateChatHistory } from '@/lib/utils/chat-history';
 import { prepareMessagesForOpenAI } from '@/lib/utils/openai';
 
-export function useOpenAIMessages(
+export const useOpenAIMessages = (
   setInputValue: (value: string) => void,
   initialMessages: IMessage[],
   currentChatId: string
-): UseMessagesResult {
+): UseMessagesResult => {
   const [messages, setMessages] = useState<IMessage[]>(initialMessages);
   const [isStreaming, setIsStreaming] = useState(false);
   const [streamedMessageId, setStreamedMessageId] = useState<string | null>(null);
@@ -238,4 +238,4 @@ export function useOpenAIMessages(
     isTraining,
     trainingRound,
   };
-}
+};
