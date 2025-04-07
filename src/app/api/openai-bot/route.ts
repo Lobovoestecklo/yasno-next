@@ -1,23 +1,29 @@
 import { NextResponse } from 'next/server';
 import { getOpenAIClient } from '@/lib/utils/openai';
-import { OPENAI_MODEL, OPENAI_POST_BODY_PARAMS, OPENAI_VECTOR_STORE_IDS } from '@/lib/constants/openai';
+import { 
+  OPENAI_MODEL, 
+  OPENAI_POST_BODY_PARAMS, 
+  OPENAI_VECTOR_STORE_IDS, 
+  OPENAI_TRAINING_SYSTEM_MESSAGE 
+} from '@/lib/constants/openai';
 import { loadScriptFromFile } from '@/lib/utils/server/scriptLoader';
 
-const SYSTEM_MESSAGE = loadScriptFromFile('src/app/api/openai-bot/system-message.txt');
-
-const MAX_RETRIES = 3;
-const INITIAL_TIMEOUT = 30000; // 30 seconds
-const BACKOFF_FACTOR = 1.5;
+// Fallback system message from file (for regular cases)
+const DEFAULT_SYSTEM_MESSAGE = loadScriptFromFile('src/app/api/openai-bot/system-message.txt');
 
 export async function POST(request: Request) {
   try {
-    const { messages } = await request.json();
+    // Parse request body; expect { messages, training?: boolean }
+    const { messages, training } = await request.json();
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json(
         { error: 'Invalid or missing messages in request body' },
         { status: 400 }
       );
     }
+
+    // Choose system message based on training flag
+    const systemMessage = training ? OPENAI_TRAINING_SYSTEM_MESSAGE : DEFAULT_SYSTEM_MESSAGE;
 
     const openai = getOpenAIClient();
     if (!openai) {
@@ -35,7 +41,7 @@ export async function POST(request: Request) {
           content: [
             {
               type: "input_text",
-              text: SYSTEM_MESSAGE
+              text: systemMessage
             }
           ]
         },

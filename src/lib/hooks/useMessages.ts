@@ -1,10 +1,10 @@
 import { useOpenAIMessages } from './useOpenAIMessages';
-import { IMessage } from '@/types';
+import { IMessage, UseMessagesResult } from '@/types';
 
 export const useMessages = (
   setInputValue: (value: string) => void,
   initialMessages: IMessage[],
   currentChatId: string
-) => {
+): UseMessagesResult => {
   return useOpenAIMessages(setInputValue, initialMessages, currentChatId);
 };

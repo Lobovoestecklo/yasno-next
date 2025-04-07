@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
 import { IMessage } from '@/types';
 import { useRouter, useParams } from 'next/navigation';
-import { updateChat, startNewChat } from '@/lib/utils/chat-management';
+import { startNewChat } from '@/lib/utils/chat-management';
 import { SidebarToggle } from '@/components/chat-history/sidebar-toggle';
 import { INITIAL_BOT_MESSAGE } from '@/lib/constants';
 import { ChatLoading } from '@/components/ui/chat-loading';
@@ -25,7 +25,14 @@ export default function ChatPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [currentChatId, setCurrentChatId] = useState<string>(chatId);
 
-  const { messages, setMessages, submitUserMessage, isStreaming } = useMessages(setInput, initialMessages, currentChatId);
+  // ✅ Деструктурируем все функции, включая submitTrainingCase
+  const {
+    messages,
+    setMessages,
+    submitUserMessage,
+    submitTrainingCase,
+    isStreaming,
+  } = useMessages(setInput, initialMessages, currentChatId);
 
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -83,12 +90,13 @@ export default function ChatPage() {
     e.preventDefault();
     if (input.trim()) {
       await submitUserMessage(input);
+      setInput('');
     }
   };
 
   const handlePredefinedMessage = (message: string) => {
     if (!currentChatId) return;
-    submitUserMessage(message);
+    submitTrainingCase(message);
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -96,11 +104,6 @@ export default function ChatPage() {
       e.preventDefault();
       sendMessage(e);
     }
-  };
-
-  const handleClearHistory = () => {
-    console.log('История очищена!');
-    // Добавьте логику очистки, если требуется
   };
 
   if (isLoading) {
@@ -111,7 +114,6 @@ export default function ChatPage() {
     <main className="min-h-screen flex items-center justify-center">
       <div className="w-[900px] max-w-[calc(100vw-2rem)] h-[calc(100vh-2rem)] mx-auto">
         <Card className="h-full flex flex-col bg-white shadow-lg rounded-[20px]">
-          {/* Шапка */}
           <CardHeader className="flex-none flex flex-row items-center justify-between bg-black text-white p-4 sticky top-0 z-10 rounded-t-[20px]">
             <div className="flex items-center gap-2">
               <SidebarToggle />
@@ -128,7 +130,6 @@ export default function ChatPage() {
             </div>
           </CardHeader>
 
-          {/* Содержимое чата */}
           <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto min-h-0">
             <Suspense fallback={<ChatLoading />}>
               {messages.map((msg) =>
@@ -155,7 +156,6 @@ export default function ChatPage() {
             </Suspense>
           </CardContent>
 
-          {/* Поле ввода и кнопка отправки */}
           <CardFooter className="flex-none border-t p-4">
             <form onSubmit={sendMessage} className="relative flex items-center w-full">
               <textarea
