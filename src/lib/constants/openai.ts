@@ -1,4 +1,4 @@
-export const OPENAI_MODEL = "gpt-4o"; // можно также использовать gpt-4, если o не поддерживается
+export const OPENAI_MODEL = "gpt-4";
 
 export const OPENAI_MAX_TOKENS = 3120;
 

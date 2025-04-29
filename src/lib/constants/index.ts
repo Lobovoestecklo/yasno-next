@@ -5,7 +5,7 @@ export const OPENAI_HEADERS = {
 };
 
 export const OPENAI_POST_BODY_PARAMS = {
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4',
     max_tokens: 3120,
     stream: true
 };
