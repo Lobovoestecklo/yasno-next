@@ -1,31 +1,43 @@
 'use client';
 
-import React, { useState, KeyboardEvent, useEffect, useRef, useCallback, Suspense } from 'react';
+import React, {
+  useState,
+  KeyboardEvent,
+  useEffect,
+  useRef,
+  useCallback,
+  Suspense,
+} from 'react';
 import { useMessages } from '@/lib/hooks/useMessages';
 import { Send } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardFooter } from '@/components/ui/card';
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardFooter,
+} from '@/components/ui/card';
 import { IMessage } from '@/types';
-import { useRouter, useParams } from 'next/navigation';
+import { useParams } from 'next/navigation';
 import { startNewChat } from '@/lib/utils/chat-management';
 import { SidebarToggle } from '@/components/chat-history/sidebar-toggle';
 import { INITIAL_BOT_MESSAGE } from '@/lib/constants';
 import { ChatLoading } from '@/components/ui/chat-loading';
 import { loadChat } from '@/lib/utils/chat-history';
+import { FormattedResponse } from '@/components/FormattedResponse';
 
-const PREDEFINED_MESSAGE = "режим тренировки";
+const PREDEFINED_MESSAGE = 'режим тренировки';
 
 export default function ChatPage() {
   const params = useParams();
   const chatId = params.id as string;
-  const [input, setInput] = useState("");
-  const router = useRouter();
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [initialMessages, setInitialMessages] = useState<IMessage[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentChatId, setCurrentChatId] = useState<string>(chatId);
 
-  // ✅ Деструктурируем все функции, включая submitTrainingCase
+  const [input, setInput] = useState('');
+  const [initialMessages, setInitialMessages] = useState<IMessage[]>([]);
+  const [currentChatId, setCurrentChatId] = useState<string>(chatId);
+  const [isLoading, setIsLoading] = useState(true);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
   const {
     messages,
     setMessages,
@@ -34,69 +46,54 @@ export default function ChatPage() {
     isStreaming,
   } = useMessages(setInput, initialMessages, currentChatId);
 
+  // Прокрутка вниз при новом сообщении
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isStreaming, scrollToBottom]);
+  }, [messages, scrollToBottom]);
 
   useEffect(() => {
     const initializeChat = async () => {
+      let defaultMessages = [INITIAL_BOT_MESSAGE];
       try {
         if (chatId === 'new') {
-          const defaultMessages = [INITIAL_BOT_MESSAGE];
-          setInitialMessages(defaultMessages);
-          setMessages(defaultMessages);
-
           const newChatId = await startNewChat(defaultMessages);
           setCurrentChatId(newChatId);
+          setInitialMessages(defaultMessages);
+          setMessages(defaultMessages);
           window.history.replaceState({}, '', `/chat/${newChatId}`);
         } else {
-          setCurrentChatId(chatId);
           const chatMessages = loadChat(chatId);
           if (chatMessages && chatMessages.length > 0) {
             setInitialMessages(chatMessages);
             setMessages(chatMessages);
+            setCurrentChatId(chatId);
           } else {
-            const defaultMessages = [INITIAL_BOT_MESSAGE];
+            const newChatId = await startNewChat(defaultMessages);
             setInitialMessages(defaultMessages);
             setMessages(defaultMessages);
-            const newChatId = await startNewChat(defaultMessages);
             setCurrentChatId(newChatId);
             window.history.replaceState({}, '', `/chat/${newChatId}`);
           }
         }
-      } catch (error) {
-        console.error('Error initializing chat:', error);
-        const defaultMessages = [INITIAL_BOT_MESSAGE];
-        setInitialMessages(defaultMessages);
-        setMessages(defaultMessages);
-        const newChatId = await startNewChat(defaultMessages);
-        setCurrentChatId(newChatId);
-        window.history.replaceState({}, '', `/chat/${newChatId}`);
+      } catch (e) {
+        console.error('Error initializing chat:', e);
       } finally {
         setIsLoading(false);
       }
     };
 
-    if (typeof window !== 'undefined') {
-      initializeChat();
-    }
+    initializeChat();
   }, [chatId, setMessages]);
 
   const sendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (input.trim()) {
-      await submitUserMessage(input);
-      setInput('');
-    }
-  };
-
-  const handlePredefinedMessage = (message: string) => {
-    if (!currentChatId) return;
-    submitTrainingCase(message);
+    if (!input.trim()) return;
+    await submitUserMessage(input.trim());
+    setInput('');
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
@@ -106,9 +103,12 @@ export default function ChatPage() {
     }
   };
 
-  if (isLoading) {
-    return <ChatLoading />;
-  }
+  const handlePredefinedMessage = async () => {
+    await submitTrainingCase(PREDEFINED_MESSAGE);
+    setInput('');
+  };
+
+  if (isLoading) return <ChatLoading />;
 
   return (
     <main className="min-h-screen flex items-center justify-center">
@@ -119,38 +119,46 @@ export default function ChatPage() {
               <SidebarToggle />
               <h1 className="text-xl font-semibold">Коммуникационный коуч</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <Button
-                variant="outline"
-                onClick={() => handlePredefinedMessage(PREDEFINED_MESSAGE)}
-                className="text-black border-white px-4 py-1 rounded"
-              >
-                {PREDEFINED_MESSAGE}
-              </Button>
-            </div>
+            <Button
+              variant="outline"
+              onClick={handlePredefinedMessage}
+              className="text-black border-white px-4 py-1 rounded"
+              disabled={isStreaming}
+            >
+              {PREDEFINED_MESSAGE}
+            </Button>
           </CardHeader>
 
           <CardContent className="flex-1 p-4 space-y-4 overflow-y-auto min-h-0">
             <Suspense fallback={<ChatLoading />}>
-              {messages.map((msg) =>
-                msg.is_scenario ? null : (
-                  <div
-                    key={msg.id}
-                    className={`flex ${msg.role === 'assistant' ? 'justify-start' : 'justify-end'}`}
-                  >
+              {messages.map(
+                (msg) =>
+                  !msg.is_scenario && (
                     <div
-                      className={`max-w-[85%] sm:max-w-[80%] rounded-[16px] px-4 py-2 ${
+                      key={msg.id}
+                      className={`flex ${
                         msg.role === 'assistant'
-                          ? 'bg-gray-100 text-gray-800'
-                          : 'bg-black text-white'
+                          ? 'justify-start'
+                          : 'justify-end'
                       }`}
                     >
-                      <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
-                        {msg.content}
-                      </p>
+                      <div
+                        className={`max-w-[85%] sm:max-w-[80%] rounded-[16px] px-4 py-2 ${
+                          msg.role === 'assistant'
+                            ? 'bg-gray-100 text-gray-800'
+                            : 'bg-black text-white'
+                        }`}
+                      >
+                        {msg.role === 'assistant' ? (
+                          <FormattedResponse content={msg.content} />
+                        ) : (
+                          <p className="text-sm md:text-base leading-relaxed whitespace-pre-wrap">
+                            {msg.content}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                )
+                  )
               )}
               <div ref={messagesEndRef} />
             </Suspense>
@@ -162,7 +170,7 @@ export default function ChatPage() {
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
-                placeholder="Введите сообщение... (Shift + Enter для новой строки)"
+                placeholder="Введите сообщение... (Shift + Enter — новая строка)"
                 rows={2}
                 className="flex-1 min-h-[50px] max-h-[200px] resize-none text-sm md:text-base leading-relaxed pr-10 bg-transparent border-none outline-none focus:ring-0 whitespace-pre-wrap"
               />
@@ -172,7 +180,6 @@ export default function ChatPage() {
                 className="absolute right-2 bottom-3 p-0 m-0 bg-transparent border-none cursor-pointer text-gray-500 hover:text-gray-700"
               >
                 <Send className="h-8 w-8" />
-                <span className="sr-only">Отправить</span>
               </button>
             </form>
           </CardFooter>
