@@ -18,14 +18,34 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { SidebarHistory } from './sidebar-history';
+import { startNewChat } from '@/lib/utils/chat-management';
+import { INITIAL_BOT_MESSAGE } from '@/lib/constants';
+import { useParams } from 'next/navigation';
+import { updateChatHistory } from '@/lib/utils/chat-history';
 
 export function AppSidebar() {
   const router = useRouter();
   const { setOpen } = useSidebar();
+  const params = useParams();
+  const currentChatId = params.id as string;
 
-  const handleNewChat = () => {
-    setOpen(false);
-    router.push('/chat/new');
+  const handleNewChat = async () => {
+    try {
+      // Если есть текущий чат, сохраняем его
+      if (currentChatId && currentChatId !== 'new') {
+        const currentMessages = localStorage.getItem(`chat_${currentChatId}`);
+        if (currentMessages) {
+          updateChatHistory(currentChatId, JSON.parse(currentMessages));
+        }
+      }
+
+      // Создаем новый чат
+      const newChatId = await startNewChat([INITIAL_BOT_MESSAGE]);
+      setOpen(false);
+      router.push(`/chat/${newChatId}`);
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+    }
   };
 
   return (

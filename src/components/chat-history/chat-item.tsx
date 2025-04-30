@@ -33,7 +33,7 @@ const PureChatItem = ({
     <SidebarMenuItem>
       <Link href={`/chat/${chat.id}`} onClick={() => setOpenMobile(false)} className="flex-1 min-w-0">
         <SidebarMenuButton isActive={isActive}>
-          {chat.title}
+          <span className="truncate">{chat.title}</span>
         </SidebarMenuButton>
       </Link>
 
@@ -59,4 +59,8 @@ const PureChatItem = ({
   );
 };
 
-export const ChatItem = memo(PureChatItem); 
+export const ChatItem = memo(PureChatItem, (prevProps, nextProps) => {
+  return prevProps.isActive === nextProps.isActive && 
+         prevProps.chat.title === nextProps.chat.title &&
+         prevProps.chat.id === nextProps.chat.id;
+}); 

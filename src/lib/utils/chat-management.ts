@@ -3,7 +3,8 @@ import {
   addChatToHistory,
   updateChatHistory,
   updateChatTitle,
-  deleteChatHistory
+  deleteChatHistory,
+  getAllChatHistories
 } from './chat-history';
 import { generateChatTitle } from './generate-chat-title';
 import { INITIAL_BOT_MESSAGE } from '../constants';
@@ -20,18 +21,60 @@ export const startNewChat = async (initialMessages: IMessage | IMessage[]) => {
 
 // Update existing chat
 export const updateChat = async (chatId: string, messages: IMessage[]) => {
+  console.log('🔄 UPDATE CHAT CALLED:', { 
+    chatId,
+    messageCount: messages.length,
+    messageTypes: messages.map(m => m.role)
+  });
+  
   // Always update messages first
   updateChatHistory(chatId, messages);
 
-  // Generate new title if we have a conversation (more than just initial message)
-  if (messages.length === 2 || messages.length === 3) {
-    const hasUserMessages = messages.some(msg => msg.role === 'user');
-    const hasAssistantMessages = messages.some(msg => msg.role === 'assistant' && msg.id !== INITIAL_BOT_MESSAGE.id);
+  // Count user messages
+  const userMessagesCount = messages.filter(msg => msg.role === 'user').length;
+  
+  // Get current chat to check if title was already generated
+  const currentChat = getAllChatHistories().find(chat => chat.id === chatId);
+  const titleWasGenerated = currentChat?.title !== 'Новый чат';
+  
+  console.log('🏷️ TITLE GENERATION CHECK:', {
+    userMessagesCount,
+    hasUserMessages: messages.some(msg => msg.role === 'user'),
+    totalMessages: messages.length,
+    chatId,
+    titleWasGenerated
+  });
 
-    if (hasUserMessages && hasAssistantMessages) {
+  // Generate title only if:
+  // 1. We have at least one user message
+  // 2. User has sent less than 4 messages
+  // 3. Title hasn't been generated yet
+  if (userMessagesCount > 0 && userMessagesCount < 4 && !titleWasGenerated) {
+    try {
+      console.log('🚀 STARTING TITLE GENERATION for chat:', chatId);
       const title = await generateChatTitle(messages);
-      updateChatTitle(chatId, title);
+      console.log('✨ GENERATED TITLE:', { chatId, title });
+      
+      if (title && title !== 'Новый чат') {
+        console.log('💾 UPDATING CHAT TITLE:', { chatId, title });
+        updateChatTitle(chatId, title);
+        // Trigger storage event for other tabs
+        window.dispatchEvent(new StorageEvent('storage', {
+          key: 'chat-history',
+          newValue: JSON.stringify(getAllChatHistories())
+        }));
+      } else {
+        console.log('⚠️ SKIPPING TITLE UPDATE - title is empty or default');
+      }
+    } catch (error) {
+      console.error('❌ FAILED TO GENERATE CHAT TITLE:', error);
     }
+  } else {
+    console.log('⏳ SKIPPING TITLE GENERATION:', {
+      userMessagesCount,
+      titleWasGenerated,
+      reason: userMessagesCount >= 4 ? 'too many messages' : titleWasGenerated ? 'title already generated' : 'no user messages'
+    });
   }
 };
 

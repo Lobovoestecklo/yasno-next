@@ -44,24 +44,38 @@ export function SidebarHistory() {
   React.useEffect(() => {
     const loadChats = () => {
       const allChats = getAllChatHistories();
-      // Only filter out empty chats or those with just the initial message
-      const validChats = allChats.filter(chat => 
-        chat.messages && 
-        chat.messages.length > 1
-      );
-      setChats(validChats);
+      setChats(prevChats => {
+        // Compare with previous chats to avoid unnecessary updates
+        if (JSON.stringify(prevChats) !== JSON.stringify(allChats)) {
+          return allChats;
+        }
+        return prevChats;
+      });
     };
 
     // Initial load
     setMounted(true);
     loadChats();
 
-    // Set up periodic refresh
-    const refreshInterval = setInterval(loadChats, 1000);
+    // Set up periodic refresh with shorter interval
+    const refreshInterval = setInterval(loadChats, 500);
 
     return () => {
       clearInterval(refreshInterval);
     };
+  }, []);
+
+  // Add event listener for storage changes
+  React.useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'chat-history') {
+        const allChats = getAllChatHistories();
+        setChats(allChats);
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
 
   // Don't render anything until mounted

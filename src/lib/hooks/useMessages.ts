@@ -6,6 +6,11 @@ export const useMessages = (
   initialMessages: IMessage[],
   currentChatId: string
 ): UseMessagesResult => {
+  console.log('🎣 useMessages hook initialized:', {
+    hasInitialMessages: initialMessages.length > 0,
+    currentChatId
+  });
+  
   const hook = useOpenAIMessages(setInputValue, initialMessages, currentChatId);
 
   return {

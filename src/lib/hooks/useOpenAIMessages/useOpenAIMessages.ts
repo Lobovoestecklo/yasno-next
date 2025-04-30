@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { IMessage, UseMessagesResult } from '@/types';
 import { updateChatHistory } from '@/lib/utils/chat-history';
+import { updateChat } from '@/lib/utils/chat-management';
 import { prepareMessagesForOpenAI } from '@/lib/utils/openai';
 
 export const useOpenAIMessages = (
@@ -59,6 +60,7 @@ export const useOpenAIMessages = (
     reader: ReadableStreamDefaultReader<Uint8Array>,
     assistantMessageId: string
   ) => {
+    console.log('🎯 Starting streaming response handling');
     const decoder = new TextDecoder();
     let assistantContent = '';
 
@@ -85,11 +87,16 @@ export const useOpenAIMessages = (
       }
     }
 
+    console.log('🏁 Finished streaming, updating chat with final content');
     setMessages((prev) => {
       const final = prev.map((msg) =>
         msg.id === assistantMessageId ? { ...msg, content: assistantContent } : msg
       );
-      updateChatHistory(currentChatId, final);
+      console.log('📤 Calling updateChat with messages:', {
+        chatId: currentChatId,
+        messageCount: final.length
+      });
+      updateChat(currentChatId, final);
       return final;
     });
   };
@@ -97,6 +104,7 @@ export const useOpenAIMessages = (
   const submitUserMessage = useCallback(
     async (message: string) => {
       if (isStreaming) return;
+      console.log('📨 Submitting user message');
 
       const userMessage: IMessage = {
         id: uuidv4(),
@@ -108,9 +116,11 @@ export const useOpenAIMessages = (
       setInputValue('');
       const updatedMessages = [...messages, userMessage];
       setMessages(updatedMessages);
+      console.log('💾 Updating chat history with user message');
       updateChatHistory(currentChatId, updatedMessages);
 
       try {
+        console.log('🚀 Sending message to API');
         const reader = await sendMessageToAPI({ messages: prepareMessagesForOpenAI(updatedMessages) });
 
         const assistantMessage: IMessage = {
@@ -123,7 +133,7 @@ export const useOpenAIMessages = (
 
         await handleStreamingResponse(reader, String(assistantMessage.id));
       } catch (error) {
-        console.error('Error submitting message:', error);
+        console.error('❌ Error submitting message:', error);
         alert('Что-то пошло не так!');
         setMessages((prev) => {
           const filtered = prev.filter((msg) => msg.id !== userMessage.id);
