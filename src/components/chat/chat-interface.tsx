@@ -103,8 +103,7 @@ export default function ChatInterface({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
-          training: true
+          messages: [...messages, userMessage]
         }),
       });
 
@@ -199,8 +198,7 @@ export default function ChatInterface({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage],
-          training: false
+          messages: [...messages, userMessage]
         }),
       });
 

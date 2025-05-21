@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     
     const body = await request.json();
     console.log('Request body:', JSON.stringify(body, null, 2));
-    const { messages, training } = body;
+    const { messages } = body;
 
     if (!messages || !Array.isArray(messages)) {
       console.error('Invalid messages format:', messages);
@@ -36,11 +36,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const systemMessage = training
-      ? OPENAI_TRAINING_SYSTEM_MESSAGE
-      : DEFAULT_SYSTEM_MESSAGE;
-
-    if (!systemMessage) {
+    if (!DEFAULT_SYSTEM_MESSAGE) {
       console.error('System message is missing');
       return NextResponse.json(
         { error: 'System message is missing or failed to load.' },
@@ -48,7 +44,7 @@ export async function POST(request: Request) {
       );
     }
 
-    console.log('System message loaded:', systemMessage.slice(0, 50) + '...');
+    console.log('System message loaded:', DEFAULT_SYSTEM_MESSAGE.slice(0, 50) + '...');
 
     const openai = getOpenAIClient();
     if (!openai) {
@@ -71,7 +67,7 @@ export async function POST(request: Request) {
       const stream = await openai.chat.completions.create({
         model: OPENAI_MODEL,
         messages: [
-          { role: 'system', content: systemMessage },
+          { role: 'system', content: DEFAULT_SYSTEM_MESSAGE },
           ...messages.map((message: any) => ({
             role: message.role,
             content: message.content,
