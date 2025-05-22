@@ -103,7 +103,8 @@ export default function ChatInterface({
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          messages: [...messages, userMessage]
+          messages: [...messages, userMessage],
+          training: true
         }),
       });
 

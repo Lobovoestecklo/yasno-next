@@ -7,8 +7,21 @@ import {
 } from '@/lib/constants/openai';
 import { loadScriptFromFile } from '@/lib/utils/server/scriptLoader';
 
+// Fallback system message in case file loading fails
+const FALLBACK_SYSTEM_MESSAGE = `Ты коммуникационный коуч, который помогает людям улучшить их навыки общения. Ты анализируешь диалоги, даешь конструктивную обратную связь и предлагаешь практические упражнения для развития коммуникативных навыков.`;
+
+// Training mode system message
+const TRAINING_SYSTEM_MESSAGE = `Ты коммуникационный коуч, который проводит тренировочные диалоги. 
+В режиме тренировки ты:
+1. Начинаешь с приветствия и объяснения формата тренировки
+2. В течение 7 реплик ведешь диалог, моделируя различные коммуникативные ситуации
+3. После 7 реплик даешь конструктивную обратную связь
+4. Предлагаешь следующую тренировочную ситуацию
+
+Ты должен быть дружелюбным, но профессиональным. Твои ответы должны быть краткими и по существу.`;
+
 // Загружаем дефолтный system message из файла
-const DEFAULT_SYSTEM_MESSAGE = loadScriptFromFile('src/app/api/openai-bot/system-message.txt');
+const DEFAULT_SYSTEM_MESSAGE = loadScriptFromFile('src/app/api/openai-bot/system-message.txt') || FALLBACK_SYSTEM_MESSAGE;
 
 export async function POST(request: Request) {
   try {
@@ -21,12 +34,13 @@ export async function POST(request: Request) {
       openAIKeyLength: process.env.OPENAI_API_KEY?.length,
       systemMessagePath: 'src/app/api/openai-bot/system-message.txt',
       systemMessageExists: !!DEFAULT_SYSTEM_MESSAGE,
-      systemMessageLength: DEFAULT_SYSTEM_MESSAGE?.length
+      systemMessageLength: DEFAULT_SYSTEM_MESSAGE?.length,
+      usingFallbackMessage: DEFAULT_SYSTEM_MESSAGE === FALLBACK_SYSTEM_MESSAGE
     });
     
     const body = await request.json();
     console.log('Request body:', JSON.stringify(body, null, 2));
-    const { messages } = body;
+    const { messages, training } = body;
 
     if (!messages || !Array.isArray(messages)) {
       console.error('Invalid messages format:', messages);
@@ -36,15 +50,11 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!DEFAULT_SYSTEM_MESSAGE) {
-      console.error('System message is missing');
-      return NextResponse.json(
-        { error: 'System message is missing or failed to load.' },
-        { status: 500 }
-      );
-    }
+    // Check if this is a training mode request
+    const isTrainingMode = training || (messages.length > 0 && messages[messages.length - 1].content === 'режим тренировки');
+    const systemMessage = isTrainingMode ? TRAINING_SYSTEM_MESSAGE : DEFAULT_SYSTEM_MESSAGE;
 
-    console.log('System message loaded:', DEFAULT_SYSTEM_MESSAGE.slice(0, 50) + '...');
+    console.log('Using system message:', isTrainingMode ? 'Training mode' : 'Default mode');
 
     const openai = getOpenAIClient();
     if (!openai) {
@@ -67,7 +77,7 @@ export async function POST(request: Request) {
       const stream = await openai.chat.completions.create({
         model: OPENAI_MODEL,
         messages: [
-          { role: 'system', content: DEFAULT_SYSTEM_MESSAGE },
+          { role: 'system', content: systemMessage },
           ...messages.map((message: any) => ({
             role: message.role,
             content: message.content,

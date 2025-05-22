@@ -7,34 +7,36 @@ export function loadScriptFromFile(filePath: string): string {
     return '';
   }
 
-  try {
-    // Try to resolve the path relative to the current working directory
-    const absolutePath = join(process.cwd(), filePath);
-    const content = readFileSync(absolutePath, 'utf-8');
-    
-    if (!content) {
-      console.error(`❌ File ${filePath} exists but is empty`);
-      return '';
-    }
-    
-    return content;
-  } catch (error) {
-    console.error(`❌ Error loading script from ${filePath}:`, error);
-    
-    // Try alternative path resolution for production
+  const possiblePaths = [
+    // Try relative to current working directory
+    join(process.cwd(), filePath),
+    // Try relative to the file's directory
+    join(__dirname, '..', '..', '..', filePath),
+    // Try in the root directory
+    join(process.cwd(), 'src', filePath),
+    // Try in the public directory
+    join(process.cwd(), 'public', filePath)
+  ];
+
+  console.log('Attempting to load script from paths:', possiblePaths);
+
+  for (const path of possiblePaths) {
     try {
-      const alternativePath = join(__dirname, '..', '..', '..', filePath);
-      const content = readFileSync(alternativePath, 'utf-8');
+      console.log(`Trying to load from: ${path}`);
+      const content = readFileSync(path, 'utf-8');
       
       if (!content) {
-        console.error(`❌ File ${filePath} exists but is empty (alternative path)`);
-        return '';
+        console.error(`❌ File ${path} exists but is empty`);
+        continue;
       }
       
+      console.log(`✅ Successfully loaded script from ${path}`);
       return content;
-    } catch (altError) {
-      console.error(`❌ Error loading script from alternative path ${filePath}:`, altError);
-      return '';
+    } catch (error) {
+      console.error(`❌ Failed to load from ${path}:`, error);
     }
   }
+
+  console.error(`❌ Failed to load script from any of the attempted paths: ${filePath}`);
+  return '';
 }
